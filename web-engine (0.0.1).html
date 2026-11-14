@@ -1,0 +1,1513 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Web Engine</title>
+<style>
+:root{--bg:#1b1d22;--p1:#23262d;--p2:#2b2f38;--p3:#353a45;--bd:#3a3f4b;--tx:#e6e8ee;--tx2:#9aa1b0;--ac:#4f8cff;--ac2:#2f5fc4;--ok:#3fbf7f;--er:#ef5b5b;--sw:6px;--mono:ui-monospace,Menlo,Consolas,monospace}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--tx);font:13px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;overflow:hidden;user-select:none}
+button,input,select,textarea{font:inherit;color:inherit}
+button{background:var(--p3);border:1px solid var(--bd);border-radius:5px;padding:4px 9px;cursor:pointer}
+button:hover{background:#40465a}
+button.pri{background:var(--ac2);border-color:var(--ac)}
+button.pri:hover{background:var(--ac)}
+button.on{background:var(--ac2);border-color:var(--ac)}
+button:disabled{opacity:.4;cursor:default}
+input,select,textarea{background:var(--bg);border:1px solid var(--bd);border-radius:4px;padding:3px 6px;min-width:0;user-select:text}
+input:focus,select:focus,textarea:focus{outline:1px solid var(--ac);border-color:var(--ac)}
+input.bad{border-color:var(--er)}
+#app{height:100%;display:grid;grid-template-rows:42px minmax(0,1fr) var(--sbh,var(--sw)) var(--bh,240px)}
+#top{display:flex;align-items:center;gap:6px;padding:0 10px;background:var(--p1);border-bottom:1px solid var(--bd)}
+#top .sp1{flex:1}
+#top .logo{font-weight:600;margin-right:6px}
+#pname{width:150px}
+#main{display:grid;grid-template-columns:var(--lw,240px) var(--slw,var(--sw)) minmax(0,1fr) var(--srw,var(--sw)) var(--rw,300px);min-height:0}
+.dock{background:var(--p1);display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden;position:relative}
+.dh{display:flex;align-items:center;gap:6px;padding:0 8px;height:30px;flex:none;background:var(--p2);border-bottom:1px solid var(--bd);font-weight:600;font-size:12px;letter-spacing:.02em}
+.dh .grow{flex:1}
+.dh button{padding:1px 7px;font-size:12px}
+.db{flex:1;min-height:0;overflow:auto}
+.strip{display:none;align-items:center;justify-content:center;background:var(--p2);cursor:pointer;color:var(--tx2);font-weight:600;border:0;border-radius:0;width:100%;height:100%}
+.dock.min .dh,.dock.min .db,.dock.min .dbx{display:none}
+.dock.min .strip{display:flex}
+#dL.min .strip,#dR.min .strip{writing-mode:vertical-rl;padding:10px 0}
+.sp{background:var(--bg);position:relative;touch-action:none;z-index:5}
+.sp::before{content:"";position:absolute;background:var(--bd);transition:background .1s}
+.sp.v{cursor:col-resize}.sp.h{cursor:row-resize}
+.sp.v::before{left:2px;right:2px;top:0;bottom:0}
+.sp.h::before{top:2px;bottom:2px;left:0;right:0}
+.sp::after{content:"";position:absolute}
+.sp.v::after{left:-5px;right:-5px;top:0;bottom:0}
+.sp.h::after{top:-5px;bottom:-5px;left:0;right:0}
+.sp:hover::before,.sp.act::before{background:var(--ac)}
+.sp.off{pointer-events:none}.sp.off::before,.sp.off::after{display:none}
+body.dragging{cursor:inherit}
+body.dragging iframe,body.dragging #cv{pointer-events:none}
+#center{display:flex;flex-direction:column;min-width:0;min-height:0;background:#101216}
+#cbar{display:flex;align-items:center;gap:6px;padding:4px 8px;background:var(--p2);border-bottom:1px solid var(--bd);flex:none}
+#cbar select{width:auto}
+#wrap{flex:1;min-height:0;overflow:auto;position:relative;touch-action:none}#wrap.panning,#wrap.panning *{cursor:grabbing!important}
+#cv{position:relative;min-height:100%;padding:16px}
+#host.empty{background:transparent!important;box-shadow:none!important}#host{background:#fff;position:relative;margin:0 auto;min-height:calc(100vh - 160px);flex:none;width:100%;box-shadow:0 0 0 1px #000}
+#ov{position:absolute;left:0;top:0;pointer-events:none;z-index:3}
+.wh{position:absolute;width:14px;cursor:ew-resize;pointer-events:auto;touch-action:none;z-index:4}.wh::before{content:'';position:absolute;left:5px;top:50%;width:4px;height:48px;margin-top:-24px;border-radius:3px;background:#5d6577;transition:background .1s}.wh:hover::before,.wh.act::before{background:var(--ac)}.wh.lk{display:none}#lockB.on{background:#7a5a1e;border-color:#d9a441}#wro{min-width:150px}.box{position:absolute;pointer-events:none;border:2px solid var(--ac);display:none}
+.box.hv{border:1px dashed #8fb4ff;border-width:1px}
+.box .lbl{position:absolute;left:-2px;top:-19px;background:var(--ac);color:#fff;font-size:11px;padding:1px 6px;border-radius:3px 3px 0 0;white-space:nowrap}
+.box .rz{position:absolute;right:-6px;bottom:-6px;width:10px;height:10px;background:#fff;border:2px solid var(--ac);pointer-events:auto;cursor:nwse-resize;touch-action:none;display:none}
+.box.rzok .rz{display:block}
+.tree{padding:4px 0}
+.row{display:flex;align-items:center;gap:4px;padding:3px 6px;cursor:pointer;white-space:nowrap;position:relative;touch-action:pan-y}
+.row:hover{background:var(--p2)}
+.row.sel{background:#2a4a85}
+.row .car{width:14px;text-align:center;color:var(--tx2);flex:none}
+.row .nm{overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
+.row .tg{font:10px var(--mono);color:var(--tx2);background:var(--bg);padding:0 5px;border-radius:3px}
+.row .ac{display:none;gap:2px}
+.row:hover .ac,.row.sel .ac{display:flex}
+.row .ac b{font-weight:400;color:var(--tx2);padding:0 4px;border-radius:3px}
+.row .ac b:hover{background:var(--p3);color:var(--tx)}
+.row.dzb::before,.row.dza::after{content:"";position:absolute;left:0;right:0;height:2px;background:var(--ac)}
+.row.dzb::before{top:0}.row.dza::after{bottom:0}
+.row.dzi{outline:2px solid var(--ac);outline-offset:-2px}
+.ghost{position:fixed;z-index:50;pointer-events:none;background:var(--ac2);padding:2px 8px;border-radius:4px;opacity:.9}
+.tabs{display:flex;gap:2px;padding:6px 8px 0;background:var(--p1);position:sticky;top:var(--bph,0);z-index:2}
+.tabs.bp{top:0;z-index:4}
+.tabs button{border-radius:5px 5px 0 0;border-bottom:0;flex:1;padding:3px 0;font-size:12px}
+.tabs.bp{padding-bottom:4px;align-items:stretch;flex-wrap:wrap}.tabs.bp .small{flex-basis:100%;margin:0 0 2px}.tabs.bp button{flex:1 1 auto;padding:3px 6px;display:flex;flex-direction:column;align-items:center;line-height:1.25}.tabs.bp button small{font-size:10px;color:var(--tx2);font-weight:400}.tabs.bp button.on small{color:#cfe0ff}.tabs.bp button.has::after{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--ok);margin-left:4px}.nt{padding:2px 10px 6px;color:var(--tx2);font-size:11px;background:var(--p1)}
+details{border-top:1px solid var(--bd)}
+summary{padding:6px 10px;cursor:pointer;font-weight:600;font-size:12px;background:var(--p1);list-style:none;position:sticky;top:0}
+summary::before{content:"▸ ";color:var(--tx2)}
+details[open]>summary::before{content:"▾ "}
+.sec{padding:4px 10px 10px}
+.f{display:grid;grid-template-columns:112px minmax(0,1fr);gap:6px;align-items:center;margin:4px 0}
+.f>label{color:var(--tx2);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:ew-resize}
+.f.nolab>label{cursor:default}
+.f .c{display:flex;gap:4px;align-items:center;min-width:0}
+.f .c>input,.f .c>select{flex:1;width:100%}
+.f.dis{opacity:.38}
+.f.dis .c,.f.dis>label{pointer-events:none}
+.seg{display:flex;flex:1;border:1px solid var(--bd);border-radius:5px;overflow:hidden}
+.seg button{flex:1;border:0;border-radius:0;padding:3px 2px;font-size:11px;background:var(--bg)}
+.seg button.on{background:var(--ac2)}
+.sides{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;flex:1}
+.sides input{text-align:center;padding:3px 2px}
+.sub{font-size:11px;color:var(--tx2);margin:8px 0 2px;text-transform:uppercase;letter-spacing:.05em}
+.item{background:var(--p2);border:1px solid var(--bd);border-radius:6px;padding:6px;margin:5px 0}
+.item .g{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:4px}
+.item .g label{font-size:10px;color:var(--tx2);display:block}
+.item .top{display:flex;gap:4px;align-items:center}
+input[type=color]{padding:0;width:30px;flex:none!important;height:24px;border-radius:4px;cursor:pointer}
+input[type=range]{padding:0;accent-color:var(--ac)}
+.small{font-size:11px;color:var(--tx2)}
+#codes .vis{overflow:auto;padding:8px;height:100%;box-sizing:border-box;font-size:12px}.vhd{font-weight:600;margin-bottom:6px;color:var(--tx2)}.vcard{border:1px solid var(--bd);border-radius:7px;padding:8px;margin-bottom:8px;background:var(--p2)}.vcard .vr{display:flex;gap:4px;align-items:center;flex-wrap:wrap;margin:4px 0}.vcard select,.vcard input{max-width:150px}.vcard input[type=color]{width:42px;padding:0;height:24px}.vst{margin-left:10px;padding-left:8px;border-left:2px solid var(--bd)}.vrow{background:var(--p3);border-radius:5px;padding:5px 6px;margin:4px 0}.vrow .tt{font-weight:600;margin-right:4px}.vrow button{padding:0 6px}.vb{color:var(--tx2);font-size:11px}#codes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));height:100%;min-height:0}
+.cp{display:flex;flex-direction:column;min-width:0;min-height:0;border-right:1px solid var(--bd)}
+.cp:last-child{border-right:0}
+.cp textarea{flex:1;border:0;border-radius:0;resize:none;font:12px/1.5 var(--mono);tab-size:2;white-space:pre;background:#14161b;min-height:0}
+.cp .ch{display:flex;gap:6px;align-items:center;padding:3px 8px;background:var(--p2);font-size:12px;flex:none}
+.cp .ch .st{font-size:11px;color:var(--tx2);margin-left:auto}
+.cp .ch .st.er{color:var(--er)}
+.cp .ch .st.ok{color:var(--ok)}
+.menu{position:fixed;z-index:60;background:var(--p2);border:1px solid var(--bd);border-radius:7px;padding:4px;min-width:170px;box-shadow:0 8px 24px #0008;max-height:70vh;overflow:auto}
+.menu button{display:block;width:100%;text-align:left;white-space:nowrap;border:0;background:none;padding:5px 9px}
+.menu button:hover{background:var(--ac2)}
+.menu .hd{padding:3px 9px;color:var(--tx2);font-size:11px}
+.isrch{position:relative;flex:none;padding:6px 8px;background:var(--p1);border-bottom:1px solid var(--bd);z-index:20}.isrch input{width:100%;padding:5px 8px}.isdd{position:absolute;left:8px;right:8px;top:calc(100% - 2px);background:var(--p2);border:1px solid var(--bd);border-radius:7px;box-shadow:0 8px 24px #0008;max-height:320px;overflow:auto;padding:4px;z-index:30}.isdd[hidden]{display:none}.isdd button{display:flex;width:100%;justify-content:space-between;gap:8px;text-align:left;border:0;background:none;padding:6px 8px}.isdd button.act,.isdd button:hover{background:var(--ac2)}.isdd button small{color:var(--tx2);font-size:11px;white-space:nowrap}.isdd .none{padding:6px 8px;color:var(--tx2)}.f.hl{outline:2px solid var(--ac);outline-offset:2px;border-radius:4px;transition:outline-color .6s}#pm{position:fixed;inset:0;z-index:70;background:var(--bg);display:none;overflow:auto}#pm.on{display:block}#pm .wrap{max-width:720px;margin:0 auto;padding:40px 20px}#pm h1{margin:0 0 4px;font-size:26px}#pm .acts{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}#pm .acts button{padding:8px 14px}#pm .pr{padding:10px 12px;cursor:pointer}#pm .pr:hover{background:var(--p3)}#modal{position:fixed;inset:0;background:#000a;z-index:80;display:none;align-items:center;justify-content:center}
+#modal.on{display:flex}
+#mb{background:var(--p1);border:1px solid var(--bd);border-radius:10px;padding:16px 18px;width:min(520px,92vw);max-height:88vh;overflow:auto}
+#mb h3{margin:0 0 10px}
+#mb .btns{display:flex;gap:6px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap}
+#mb label.ck{display:flex;gap:6px;align-items:center;margin:6px 0}
+#mb .fl{display:flex;align-items:center;gap:8px;margin:5px 0;padding:6px 8px;background:var(--p2);border-radius:6px}
+#mb .fl span{flex:1;font-family:var(--mono)}.pr{display:flex;align-items:center;gap:6px;margin:5px 0;padding:7px 9px;background:var(--p2);border-radius:7px;border:1px solid transparent}.pr.cur{border-color:var(--ac)}.pr .nm{flex:1;min-width:0}.pr .nm b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pr button{padding:2px 7px}.dz{border:2px dashed var(--bd);border-radius:10px;padding:18px;text-align:center;color:var(--tx2);margin:8px 0}.dz.over{border-color:var(--ac);background:#2a3550}
+#toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--p3);border:1px solid var(--bd);padding:7px 14px;border-radius:7px;z-index:90;opacity:0;pointer-events:none;transition:opacity .2s}
+#toast.on{opacity:1}
+#pm .pr .nm{min-width:0}@media (max-width:640px){.pr{flex-wrap:wrap}#pm .pr .nm{flex:1 1 100%}.pr button{flex:1}#pm .wrap{padding:24px 14px}#pm .acts button{flex:1 1 auto}}
+#mtab{display:none}
+@media (max-height:560px) and (orientation:landscape),(max-width:600px) and (orientation:portrait){
+ html,body{overscroll-behavior:none}
+ #app{height:100dvh;grid-template-columns:calc(54px + env(safe-area-inset-left)) minmax(0,1fr);grid-template-rows:42px minmax(0,1fr);position:relative}
+ #top{grid-column:1/-1;overflow-x:auto;gap:5px;padding:0 8px;scrollbar-width:none}
+ #top::-webkit-scrollbar{display:none}
+ #top>*{flex:none}#top .sp1,#top .logo,#saved,#helpB{display:none}
+ #pname{width:130px}#top button{padding:5px 10px}
+ #main{display:contents}
+ #center{grid-row:2;grid-column:2;min-width:0}
+ #main>.dock,#app>#dB{grid-row:2;grid-column:2;justify-self:end;width:var(--pw,46%);z-index:10;display:none;border-left:1px solid var(--bd);box-shadow:-6px 0 18px #0008}
+ body[data-m=tree]{--pw:42%}body[data-m=insp]{--pw:48%}body[data-m=code]{--pw:62%}
+ body[data-m=tree] #center,body[data-m=insp] #center,body[data-m=code] #center{margin-right:var(--pw)}
+ body[data-m=tree] #dL,body[data-m=insp] #dR,body[data-m=code] #app>#dB{display:flex}
+ .sp{display:none!important}
+ .strip,.dh button[data-min]{display:none!important}
+ .dock.min .dh{display:flex}.dock.min .db,.dock.min .dbx{display:block}
+ #dB .dh .small,#dB .dh button{display:none}
+ .row{min-height:34px;align-items:center}.row .ac b{padding:5px 9px;font-size:15px}
+ #cbar{flex-wrap:wrap;gap:5px;padding:3px 6px}#cbar .small:not(#wro):not(#selinfo){display:none}
+ #codes{display:grid;grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:100%;overflow-x:auto;scroll-snap-type:x mandatory;height:100%}
+ #codes .cp{scroll-snap-align:start;min-width:0}
+ #mb{width:min(560px,calc(100vw - 20px));max-height:94dvh;padding:12px}
+ #mtab{display:flex;flex-direction:column;grid-row:2;grid-column:1;background:var(--p1);border-right:1px solid var(--bd);padding-left:env(safe-area-inset-left);z-index:11}
+ #mtab button{flex:1;border:0;border-bottom:1px solid var(--bd);border-radius:0;background:none;color:var(--tx2);font-size:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;padding:2px}
+ #mtab button b{font-size:16px;font-weight:400}
+ #mtab button.on{color:#fff;background:var(--p3);box-shadow:inset 3px 0 0 var(--ac)}
+ #pm .wrap{padding:16px 24px}
+}
+@media (max-width:600px) and (orientation:portrait){
+ #app{grid-template-columns:minmax(0,1fr);grid-template-rows:46px minmax(0,1fr) calc(56px + env(safe-area-inset-bottom))}
+ #center{grid-column:1}
+ #main>.dock,#app>#dB{grid-column:1;justify-self:stretch;align-self:end;width:auto;height:var(--ph,58%);border-left:0;border-top:1px solid var(--bd);box-shadow:0 -6px 18px #0008}
+ body[data-m=tree]{--ph:55%}body[data-m=insp]{--ph:60%}body[data-m=code]{--ph:68%}
+ body[data-m=tree] #center,body[data-m=insp] #center,body[data-m=code] #center{margin-right:0;margin-bottom:var(--ph)}
+ #mtab{flex-direction:row;grid-row:3;grid-column:1;border-right:0;border-top:1px solid var(--bd);padding:0 0 env(safe-area-inset-bottom)}
+ #mtab button{border-bottom:0;border-right:1px solid var(--bd);font-size:11px}#mtab button:last-child{border-right:0}
+ #mtab button.on{box-shadow:inset 0 3px 0 var(--ac)}
+ #top button{padding:7px 11px}
+ #pm .wrap{padding:22px 14px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+ <div id="top">
+  <button id="menuB" title="Menu: simpan, keluar ke daftar proyek, ekspor, impor">☰ Menu</button>
+  <span class="logo">Web Engine</span>
+  <input id="pname" value="Proyek baru" aria-label="Nama proyek"><span class="small" id="saved" style="min-width:110px"></span>
+  <button id="undoB" title="Urungkan (Ctrl+Z)">↶</button><button id="redoB" title="Ulangi (Ctrl+Y)">↷</button>
+  <button id="addB" class="pri">+ Elemen</button>
+  <span class="sp1"></span>
+  <button id="termB" title="Ganti istilah: Web designer (display, flex…) atau bahasa awam (Cara tampil, Susun otomatis…)">Istilah: Web</button>
+  <button id="prevB">Pratinjau</button>
+  <button id="saveB">Simpan</button>
+  <button id="expB" class="pri">Ekspor</button>
+  <button id="projB" title="Daftar proyek tersimpan di browser ini">Proyek</button>
+  <button id="impB" title="Impor file HTML, CSS, JS, atau JSON">Impor</button>
+  <button id="helpB">?</button>
+ </div>
+ <div id="main">
+  <section class="dock" id="dL">
+   <div class="dh"><span class="grow">Daftar elemen</span><button data-min="l" title="Kecilkan">–</button></div>
+   <div class="db"><div class="tree" id="tree"></div></div>
+   <button class="strip" data-exp="l">Daftar elemen ▸</button>
+  </section>
+  <div class="sp v" id="sL"></div>
+  <section id="center">
+   <div id="cbar">
+    <span class="small">Lebar halaman</span>
+    <select id="wsel"></select>
+    <span class="small" id="wro"></span>
+    <button id="lockB" title="Kunci lebar: mencegah lebar kanvas berubah karena sentuhan atau seret yang tidak sengaja">🔓 Bebas</button>
+    <span class="zm" style="display:inline-flex;gap:2px;margin-left:8px"><button id="zo" title="Perkecil (Ctrl + scroll mouse)">−</button><button id="zr" title="Kembali ke 100%" style="min-width:56px">100%</button><button id="zi" title="Perbesar (Ctrl + scroll mouse)">+</button></span>
+    <span class="small" id="selinfo" style="margin-left:auto"></span>
+   </div>
+   <div id="wrap"><div id="cv"><div id="host"></div><div id="ov"><div class="wh" id="whL" title="Seret untuk mengubah lebar kanvas (klik dua kali = penuh)"></div><div class="wh" id="whR" title="Seret untuk mengubah lebar kanvas (klik dua kali = penuh)"></div><div class="box hv" id="hovB"></div><div class="box" id="selB"><span class="lbl"></span><span class="rz"></span></div></div></div></div>
+  </section>
+  <div class="sp v" id="sR"></div>
+  <section class="dock" id="dR">
+   <div class="dh"><span class="grow">Pengaturan</span><button data-min="r" title="Kecilkan">–</button></div>
+   <div class="isrch"><input id="isq" type="search" placeholder="Cari pengaturan… (mis. warna, jarak, bayangan)" autocomplete="off" spellcheck="false"><div id="isdd" class="isdd" hidden></div></div>
+   <div class="db" id="insp"></div>
+   <button class="strip" data-exp="r">◂ Pengaturan</button>
+  </section>
+ </div>
+ <div class="sp h" id="sB"></div>
+ <section class="dock" id="dB">
+  <div class="dh"><span>Kode</span><span class="small">dua arah: ketik kode, daftar dan pengaturan ikut berubah</span><span class="grow"></span><button data-min="b" title="Kecilkan">–</button></div>
+  <div class="db dbx" style="overflow:hidden"><div id="codes">
+   <div class="cp"><div class="ch"><b>HTML</b><span class="st" id="stH"></span></div><textarea id="taH" spellcheck="false"></textarea></div>
+   <div class="cp"><div class="ch"><b>CSS</b><span class="st" id="stC"></span></div><textarea id="taC" spellcheck="false"></textarea></div>
+   <div class="cp"><div class="ch"><b>JS</b><span class="st" id="stJ" title="JavaScript dijalankan di kanvas (live) dan ikut diekspor.">dijalankan di kanvas</span></div><textarea id="taJ" spellcheck="false" placeholder="// JavaScript (opsional). Belum dijalankan di kanvas."></textarea></div>
+   <div class="cp"><div class="ch"><b>Visual</b><span class="st" id="stV">untuk elemen yang dipilih</span></div><div class="vis" id="vis"></div></div>
+  </div></div>
+  <button class="strip" data-exp="b">Kode ▴</button>
+ </section>
+<nav id="mtab"><button data-m="canvas" class="on"><b>▣</b>Kanvas</button><button data-m="tree"><b>☰</b>Daftar</button><button data-m="insp"><b>⚙</b>Pengaturan</button><button data-m="code"><b>&lt;/&gt;</b>Kode</button></nav>
+</div>
+<div id="pm"></div>
+<div id="modal"><div id="mb"></div></div>
+<div id="toast"></div>
+<script type="text/plain" id="dummy"></script>
+<script>
+'use strict';
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const el = (t, a = {}, ...k) => { const e = document.createElement(t); for (const [n, v] of Object.entries(a)) { if (n === 'class') e.className = v; else if (n === 'text') e.textContent = v; else if (n.startsWith('on')) e.addEventListener(n.slice(2), v); else if (v !== false && v != null) e.setAttribute(n, v === true ? '' : v); } k.flat().forEach(c => c != null && e.append(c)); return e; };
+const rafT = fn => { let q = 0; return (...a) => { if (q) return; q = requestAnimationFrame(() => { q = 0; fn(...a); }); }; };
+const cap = (e, t) => { try { t.setPointerCapture(e.pointerId); } catch (_) {} };
+function toast(m) { const t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 2200); }
+
+/* ===== Model ===== */
+const VOID = new Set(['img', 'input', 'br', 'hr', 'source', '#t']);
+const ALLOW = new Set('div section article header footer nav main aside span p h1 h2 h3 h4 h5 h6 a button img input textarea label ul ol li strong em small br hr pre code blockquote figure figcaption fieldset table thead tbody tfoot tr td th caption form select option optgroup canvas video audio source b i u s mark sup sub abbr cite q kbd dl dt dd details summary progress meter'.split(' '));
+const STATES = ['base', 'hover', 'active', 'focus'];
+const STATE_LBL = { base: 'Normal', hover: 'Disorot', active: 'Ditekan', focus: 'Terfokus' };
+const STATE_TIP = { base: 'Tampilan biasa', hover: 'Saat kursor berada di atas elemen', active: 'Saat elemen sedang ditekan/diklik', focus: 'Saat elemen dipilih (mis. isian yang sedang diketik)' };
+const KIND = { div: 'Blok', fieldset: 'Blok berjudul', section: 'Bagian', article: 'Artikel', header: 'Kepala', footer: 'Kaki', nav: 'Menu', main: 'Isi utama', aside: 'Samping', span: 'Teks sebaris', p: 'Teks', h1: 'Judul 1', h2: 'Judul 2', h3: 'Judul 3', h4: 'Judul 4', h5: 'Judul 5', h6: 'Judul 6', a: 'Tautan', button: 'Tombol', img: 'Gambar', input: 'Isian', textarea: 'Isian panjang', label: 'Label', ul: 'Daftar', ol: 'Daftar angka', li: 'Butir daftar', strong: 'Teks tebal', em: 'Teks miring', small: 'Teks kecil', br: 'Baris baru', hr: 'Garis pemisah', pre: 'Teks apa adanya', code: 'Kode', blockquote: 'Kutipan', figure: 'Gambar + keterangan', figcaption: 'Keterangan', body: 'Halaman', '#t': 'Teks mentah', table: 'Tabel', tr: 'Baris tabel', td: 'Sel tabel', th: 'Sel judul', form: 'Formulir', select: 'Pilihan', option: 'Opsi', canvas: 'Kanvas gambar', video: 'Video', audio: 'Audio' };
+let TECH = true;
+const H = (h, t) => TECH ? t : h;
+const kind = t => TECH ? t : (KIND[t] || t);
+const BLOCKS = new Set(['div', 'fieldset', 'section', 'article', 'aside', 'nav', 'main', 'header', 'footer']);
+let uid = 1;
+const newNode = (tag, id, o = {}) => Object.assign({ k: 'n' + (uid++), tag, id, text: '', legend: '', lg: {}, attrs: {}, st: { base: {}, hover: {}, active: {}, focus: {} }, ch: [], open: true }, o);
+let P, SEL = null, state = 'base', preview = false, MQ = null;
+const mkStates = () => ({ base: {}, hover: {}, active: {}, focus: {} });
+function stMap(n, s, mq) { if (!mq) return n.st[s]; n.mq = n.mq || {}; const m = n.mq[mq] || (n.mq[mq] = mkStates()); return m[s] || (m[s] = {}); }
+const lvls = () => [null, ...[...P.bps].sort((x, y) => y - x)];
+function inherited(prop) {
+  const n = cur(), lv = lvls(), idx = lv.indexOf(MQ), out = [];
+  if (state !== 'base') out.push([idx, 'base']);
+  for (let i = idx - 1; i >= 0; i--) { out.push([i, state]); if (state !== 'base') out.push([i, 'base']); }
+  for (const [i, s] of out) { const v = stMap(n, s, lv[i])[prop]; if (v != null) return v; }
+  return '';
+}
+
+function demo() {
+  const root = newNode('body', 'body', { st: { base: { 'margin-top': '0px', 'margin-right': '0px', 'margin-bottom': '0px', 'margin-left': '0px', 'background-color': '#f2f2f2', 'font-family': 'system-ui, sans-serif' }, hover: {}, active: {}, focus: {} } });
+  const kartu = newNode('div', 'kartu', { st: { base: { display: 'flex', 'flex-direction': 'column', gap: '12px', width: '320px', 'padding-top': '24px', 'padding-right': '24px', 'padding-bottom': '24px', 'padding-left': '24px', 'margin-top': '40px', 'margin-right': 'auto', 'margin-bottom': '40px', 'margin-left': 'auto', 'background-color': '#ffffff', 'border-top-left-radius': '16px', 'border-top-right-radius': '16px', 'border-bottom-right-radius': '16px', 'border-bottom-left-radius': '16px', 'box-shadow': '0px 10px 30px 0px rgba(0, 0, 0, 0.18)' }, hover: {}, active: {}, focus: {} } });
+  const judul = newNode('h2', 'judul', { text: 'Halo dunia', st: { base: { margin: '0', color: '#222222', 'font-size': '24px' }, hover: {}, active: {}, focus: {} } });
+  const teks = newNode('p', 'deskripsi', { text: 'Ini kartu pertama. Klik elemen di kanvas atau hierarki, lalu ubah lewat inspector.', st: { base: { margin: '0', color: '#666666', 'line-height': '1.5' }, hover: {}, active: {}, focus: {} } });
+  const tombol = newNode('button', 'tombol', { text: 'Klik aku', st: { base: { 'background-image': 'linear-gradient(135deg, #4f8cff 0%, #9b5cff 100%)', color: '#ffffff', 'border-style': 'none', 'padding-top': '10px', 'padding-right': '18px', 'padding-bottom': '10px', 'padding-left': '18px', 'border-top-left-radius': '10px', 'border-top-right-radius': '10px', 'border-bottom-right-radius': '10px', 'border-bottom-left-radius': '10px', 'font-size': '16px', cursor: 'pointer', transition: 'all 0.2s ease' }, hover: { transform: 'scale(1.05)', 'box-shadow': '0px 6px 16px 0px rgba(79, 140, 255, 0.5)' }, active: { transform: 'scale(0.97)' }, focus: {} } });
+  kartu.ch.push(judul, teks, tombol); root.ch.push(kartu);
+  kartu.mq = { 480: { base: { width: '90%' }, hover: {}, active: {}, focus: {} } };
+  return { name: 'Proyek Saya', root, extra: '', bps: [1024, 768, 480] };
+}
+const walk = (n, f, par = null) => { f(n, par); n.ch.forEach(c => walk(c, f, n)); };
+const byK = k => { let r = null; walk(P.root, n => { if (n.k === k) r = n; }); return r; };
+const parentOf = n => { let r = null; walk(P.root, (x, p) => { if (x === n) r = p; }); return r; };
+const cur = () => byK(SEL) || P.root;
+const slug = s => (s || '').toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '').replace(/^(\d)/, 'e$1');
+function uniqueId(base, except, extraUsed) { base = slug(base) || 'elemen'; const used = new Set(extraUsed || []); walk(P.root, n => { if (n !== except && n.tag !== '#t') used.add(n.id); }); if (!used.has(base) && base !== 'body') return base; let i = 2; while (used.has(base + '-' + i)) i++; return base + '-' + i; }
+function ensureIds() { const seen = new Set(['body']); walk(P.root, n => { if (n === P.root || n.tag === '#t') return; let b = slug(n.id) || n.tag; let id = b, i = 2; while (seen.has(id)) id = b + '-' + (i++); n.id = id; seen.add(id); }); }
+
+/* ===== Util parsing ===== */
+function splitTop(s, sep) { const out = []; let d = 0, q = '', c0 = ''; for (const c of s) { if (q) { c0 += c; if (c === q) q = ''; continue; } if (c === '"' || c === "'") { q = c; c0 += c; continue; } if (c === '(') d++; if (c === ')') d--; if (d === 0 && (sep === ' ' ? /\s/.test(c) : c === sep)) { if (c0.trim()) out.push(c0.trim()); c0 = ''; continue; } c0 += c; } if (c0.trim()) out.push(c0.trim()); return out; }
+const isColor = s => { try { return CSS.supports('color', s); } catch (_) { return false; } };
+const isLen = s => /^-?(\d+\.?\d*|\.\d+)(px|em|rem|%|vw|vh|ch)?$/.test(s);
+const cvx = document.createElement('canvas').getContext('2d');
+function colorHex(s) { if (!s || !isColor(s)) return '#000000'; cvx.fillStyle = '#000'; cvx.fillStyle = s; const v = cvx.fillStyle; if (v[0] === '#') return v.length === 7 ? v : '#000000'; const m = v.match(/[\d.]+/g); if (!m) return '#000000'; return '#' + m.slice(0, 3).map(x => (+x).toString(16).padStart(2, '0')).join(''); }
+function colorAlpha(s) { if (!s || !isColor(s)) return 1; cvx.fillStyle = '#000'; cvx.fillStyle = s; const v = cvx.fillStyle; if (v[0] === '#') return 1; const m = v.match(/[\d.]+/g); return m && m.length > 3 ? +m[3] : 1; }
+function withHex(old, hex) { const a = colorAlpha(old); if (a >= 1) return hex; const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16); return `rgba(${r}, ${g}, ${b}, ${a})`; }
+const num = v => { const f = parseFloat(v); return isNaN(f) ? 0 : f; };
+const rnd = (v, d = 2) => Math.round(v * 10 ** d) / 10 ** d;
+
+/* ===== Shorthand expand / collapse ===== */
+const SIDES = ['top', 'right', 'bottom', 'left'];
+const CORNERS = ['top-left', 'top-right', 'bottom-right', 'bottom-left'];
+function four(vals) { const [a, b = a, c = a, d = b] = vals; return [a, b, c, d]; }
+function expandDecl(prop, val, out) {
+  const v = val.trim();
+  if (prop === 'margin' || prop === 'padding') { const f = four(splitTop(v, ' ')); SIDES.forEach((s, i) => out[prop + '-' + s] = f[i]); }
+  else if (prop === 'border-radius') { const f = four(splitTop(v.split('/')[0], ' ')); CORNERS.forEach((s, i) => out['border-' + s + '-radius'] = f[i]); }
+  else if (prop === 'border' || prop === 'outline') {
+    if (v === 'none' || v === '0') { out[prop + '-style'] = 'none'; return; }
+    splitTop(v, ' ').forEach(t => { if (/^(none|solid|dashed|dotted|double|groove|ridge|inset|outset|hidden)$/.test(t)) out[prop + '-style'] = t; else if (isLen(t) || /^(thin|medium|thick)$/.test(t)) out[prop + '-width'] = /^[\d.]+$/.test(t) ? t + 'px' : t; else if (isColor(t) || /\(/.test(t)) out[prop + '-color'] = t; });
+  }
+  else if (prop === 'overflow') { const f = splitTop(v, ' '); out['overflow-x'] = f[0]; out['overflow-y'] = f[1] || f[0]; }
+  else if (prop === 'flex') { const f = splitTop(v, ' '); if (f[0] === 'none') { out['flex-grow'] = '0'; out['flex-shrink'] = '0'; } else if (f[0] === 'auto') { out['flex-grow'] = '1'; out['flex-shrink'] = '1'; } else { out['flex-grow'] = f[0]; if (f[1] != null) out['flex-shrink'] = f[1]; if (f[2] != null) out['flex-basis'] = f[2]; } }
+  else if (prop === 'background' && isColor(v) && !/gradient|url/.test(v)) out['background-color'] = v;
+  else if (prop === 'gap') { out.gap = v; }
+  else out[prop] = v;
+}
+function parseDecls(txt) { const out = {}; splitTop(txt, ';').forEach(d => { const i = d.indexOf(':'); if (i < 1) return; const p = d.slice(0, i).trim().toLowerCase(), v = d.slice(i + 1).trim(); if (p && v) expandDecl(p, v, out); }); return out; }
+const ORDER = ['display', 'position', 'top', 'right', 'bottom', 'left', 'z-index', 'flex-direction', 'flex-wrap', 'justify-content', 'align-items', 'align-content', 'gap', 'row-gap', 'column-gap', 'grid-', 'justify-items', 'flex-', 'align-self', 'justify-self', 'order', 'width', 'height', 'min-', 'max-', 'aspect', 'box-sizing', 'overflow', 'object-fit', 'margin', 'padding', 'background', 'border', 'outline', 'box-shadow', 'color', 'font', 'line-height', 'letter', 'text-', 'white-space', 'opacity', 'visibility', 'transform', 'filter', 'backdrop', 'mix-', 'transition', 'cursor', 'pointer'];
+const ordI = p => { const i = ORDER.findIndex(o => p === o || p.startsWith(o)); return i < 0 ? 999 : i; };
+function declList(map) {
+  const m = { ...map }, out = [];
+  const coll = (names, outp) => { if (names.every(n => m[n] != null)) { const v = names.map(n => m[n]); let s; if (v[3] === v[1]) { s = v[2] === v[0] ? (v[1] === v[0] ? [v[0]] : [v[0], v[1]]) : [v[0], v[1], v[2]]; } else s = v; out.push([outp, s.join(' ')]); names.forEach(n => delete m[n]); } };
+  coll(SIDES.map(s => 'margin-' + s), 'margin'); coll(SIDES.map(s => 'padding-' + s), 'padding'); coll(CORNERS.map(s => 'border-' + s + '-radius'), 'border-radius');
+  Object.keys(m).forEach(k => out.push([k, m[k]]));
+  return out.sort((a, b) => ordI(a[0]) - ordI(b[0]) || (a[0] < b[0] ? -1 : 1));
+}
+
+/* ===== Generators ===== */
+const KF = {
+  'we-muncul': '@keyframes we-muncul {\n  from { opacity: 0; }\n  to { opacity: 1; }\n}',
+  'we-denyut': '@keyframes we-denyut {\n  0%, 100% { transform: scale(1); }\n  50% { transform: scale(1.08); }\n}',
+  'we-goyang': '@keyframes we-goyang {\n  0%, 100% { transform: translateX(0); }\n  25% { transform: translateX(-6px); }\n  75% { transform: translateX(6px); }\n}',
+  'we-putar': '@keyframes we-putar {\n  from { transform: rotate(0deg); }\n  to { transform: rotate(360deg); }\n}',
+  'we-pantul': '@keyframes we-pantul {\n  0%, 100% { transform: translateY(0); }\n  50% { transform: translateY(-16px); }\n}',
+  'we-melayang': '@keyframes we-melayang {\n  0%, 100% { transform: translateY(0); }\n  50% { transform: translateY(-8px); }\n}'
+};
+const selOf = (n, scope) => n.tag === 'body' ? (scope || 'body') : '#' + n.id;
+function genCSS(scope) {
+  const parts = [];
+  walk(P.root, n => {
+    STATES.forEach(s => { const L = declList(n.st[s]); if (!L.length) return; parts.push(`${selOf(n, scope)}${s === 'base' ? '' : ':' + (s === 'active' ? 'active' : s)} {\n${L.map(([p, v]) => `  ${p}: ${v};`).join('\n')}\n}`); });
+    if (n.legend && n.lg) { const L = declList(n.lg); if (L.length) parts.push(`${selOf(n, scope)} > legend {\n${L.map(([p, v]) => `  ${p}: ${v};`).join('\n')}\n}`); }
+  });
+  const usedKf = new Set(); walk(P.root, n => STATES.forEach(s => { const m = (n.st[s].animation || '').match(/we-[a-z]+/); if (m) usedKf.add(m[0]); }));
+  usedKf.forEach(k => KF[k] && parts.push(KF[k]));
+  [...P.bps].sort((x, y) => y - x).forEach(bp => {
+    const inner = [];
+    walk(P.root, n => { const m = n.mq && n.mq[bp]; if (!m) return; STATES.forEach(s => { const L = declList(m[s] || {}); if (L.length) inner.push(`  ${selOf(n, scope)}${s === 'base' ? '' : ':' + s} {\n${L.map(([p, v]) => `    ${p}: ${v};`).join('\n')}\n  }`); }); });
+    if (inner.length) parts.push(`@media (max-width: ${bp}px) {\n${inner.join('\n\n')}\n}`);
+  });
+  let css = parts.join('\n\n');
+  if (P.extra && P.extra.trim()) css += (css ? '\n\n' : '') + P.extra.trim();
+  return css ? css + '\n' : '';
+}
+function evalMq(cond, w) {
+  const ps = cond.split(/\s+and\s+/i); let ok = true;
+  for (const p of ps) { const m = p.trim().match(/^\(\s*(max|min)-width\s*:\s*([\d.]+)px\s*\)$/); if (!m) return null; if (m[1] === 'max' ? !(w <= +m[2]) : !(w >= +m[2])) ok = false; }
+  return ok;
+}
+function emulateMedia(css, w) {
+  let out = '', i = 0;
+  while (i < css.length) {
+    const at = css.indexOf('@media', i); if (at < 0) { out += css.slice(i); break; }
+    out += css.slice(i, at); const o = css.indexOf('{', at); if (o < 0) { out += css.slice(at); break; }
+    let d = 1, j = o + 1; while (j < css.length && d) { if (css[j] === '{') d++; else if (css[j] === '}') d--; j++; }
+    const r = evalMq(css.slice(at + 6, o).trim(), w); out += r === true ? css.slice(o + 1, j - 1) : r === false ? '' : css.slice(at, j); i = j;
+  }
+  return out;
+}
+const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const escA = s => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+function attrStr(n) { let s = ` id="${escA(n.id)}"`; for (const [k, v] of Object.entries(n.attrs)) if (v !== '' && v != null) s += ` ${k}="${escA(v)}"`; return s; }
+function genHTML(nodes, ind = 0) {
+  const pad = '  '.repeat(ind);
+  return nodes.map(n => {
+    if (n.tag === '#t') return pad + esc(n.text);
+    const o = `<${n.tag}${attrStr(n)}>`;
+    if (VOID.has(n.tag)) return pad + o;
+    const lg = n.legend ? `\n${pad}  <legend>${esc(n.legend)}</legend>` : '';
+    if (!n.ch.length && !lg) return `${pad}${o}${esc(n.text)}</${n.tag}>`;
+    return `${pad}${o}${lg}${n.text ? '\n' + pad + '  ' + esc(n.text) : ''}${n.ch.length ? '\n' + genHTML(n.ch, ind + 1) : ''}\n${pad}</${n.tag}>`;
+  }).join('\n');
+}
+const safeAttr = (k, v) => !/^on/i.test(k) && k !== 'style' && !(/^(href|src)$/i.test(k) && /^\s*javascript:/i.test(v));
+function fullDoc(split, viewport) {
+  const css = genCSS(), body = genHTML(P.root.ch, 2);
+  const head = `  <meta charset="utf-8">\n${viewport ? '  <meta name="viewport" content="width=device-width, initial-scale=1">\n' : ''}  <title>${esc(P.name)}</title>\n`;
+  const bodyAttr = Object.entries(P.root.attrs).filter(([k, v]) => v).map(([k, v]) => ` ${k}="${escA(v)}"`).join('');
+  const js = (P.js || '').trim();
+  const mk = (style, script) => `<!DOCTYPE html>\n<html lang="id">\n<head>\n${head}${style}</head>\n<body${bodyAttr}>\n${body}${script}\n</body>\n</html>\n`;
+  if (split) { const out = [{ name: 'index.html', text: mk('  <link rel="stylesheet" href="style.css">\n', js ? '\n  <script src="script.js"><\/script>' : '') }, { name: 'style.css', text: css }]; if (js) out.push({ name: 'script.js', text: js + '\n' }); return out; }
+  return [{ name: 'index.html', text: mk('  <style>\n' + css.replace(/^(?=.)/gm, '    ') + '  </style>\n', js ? '\n  <script>\n' + js.replace(/^(?=.)/gm, '    ') + '\n  <\/script>' : '') }];
+}
+
+/* ===== Importers ===== */
+const SKIP_TAGS = new Set(['script', 'style', 'link', 'meta', 'noscript', 'template', 'title', 'base', 'head']);
+function convertBody(bodyEl, oldMap, dropped) {
+  const conv = d => {
+    if (d.nodeType !== 1) return null;
+    const tag = d.tagName.toLowerCase();
+    if (SKIP_TAGS.has(tag)) return null;
+    if (!ALLOW.has(tag)) { dropped.add(tag); return null; }
+    const n = newNode(tag, d.getAttribute('id') || tag);
+    for (const a of d.attributes) if (a.name !== 'id' && safeAttr(a.name, a.value)) n.attrs[a.name] = a.value;
+    if (d.getAttribute('style')) Object.assign(n.st.base, parseDecls(d.getAttribute('style')));
+    const lgEl = tag === 'fieldset' ? [...d.children].find(c => c.tagName === 'LEGEND') : null;
+    if (lgEl) n.legend = lgEl.textContent.trim();
+    if (!VOID.has(tag)) {
+      const kids = [...d.childNodes].filter(c => c !== lgEl);
+      const els = kids.some(c => c.nodeType === 1 && !SKIP_TAGS.has(c.tagName.toLowerCase()));
+      const txts = kids.filter(c => c.nodeType === 3 && c.textContent.trim());
+      if (els && txts.length) kids.forEach(c => { if (c.nodeType === 3) { const t = c.textContent.replace(/\s+/g, ' ').trim(); if (t) n.ch.push(newNode('#t', '', { text: t })); } else { const x = conv(c); if (x) n.ch.push(x); } });
+      else { n.text = txts.map(c => c.textContent.replace(/\s+/g, ' ').trim()).join(' '); n.ch = kids.map(conv).filter(Boolean); }
+    }
+    const o = oldMap[n.id]; if (o && o.tag !== 'body' && o.tag !== '#t') { n.st = o.st; n.lg = o.lg || {}; n.mq = o.mq || {}; n.open = o.open; }
+    return n;
+  };
+  return [...bodyEl.childNodes].map(conv).filter(Boolean);
+}
+function importHTML(src) {
+  const oldMap = {}; walk(P.root, n => { if (n.tag !== '#t') oldMap[n.id] = n; });
+  const doc = new DOMParser().parseFromString('<!DOCTYPE html><body>' + src, 'text/html'), dropped = new Set();
+  P.root.ch = convertBody(doc.body, oldMap, dropped); ensureIds();
+  return dropped.size;
+}
+function parseDoc(html) {
+  const doc = new DOMParser().parseFromString(html, 'text/html'), dropped = new Set();
+  const bodyAttrs = {}; for (const a of doc.body.attributes) if (safeAttr(a.name, a.value) && a.name !== 'style' && a.name !== 'id') bodyAttrs[a.name] = a.value;
+  return { title: (doc.title || '').trim(), css: [...doc.querySelectorAll('style')].map(s => s.textContent).join('\n'), js: [...doc.querySelectorAll('script:not([src])')].map(s => s.textContent.trim()).filter(Boolean).join('\n\n'), extScripts: [...doc.querySelectorAll('script[src]')].map(s => s.getAttribute('src')), links: [...doc.querySelectorAll('link[rel~=stylesheet]')].map(l => l.getAttribute('href')), bodyAttrs, bodyStyle: doc.body.getAttribute('style') || '', nodes: convertBody(doc.body, {}, dropped), dropped };
+}
+function importCSS(src, merge) {
+  const stats = { vis: 0, extra: 0 };
+  const byId = {}; walk(P.root, n => { if (n.tag === '#t') return; if (!merge) { n.st = mkStates(); n.lg = {}; n.mq = {}; } byId[n.tag === 'body' ? 'body' : n.id] = n; });
+  const s = src.replace(/\/\*[\s\S]*?\*\//g, ''), extra = [];
+  const rules = (txt, mq, top) => {
+    let i = 0;
+    while (i < txt.length) {
+      const o = txt.indexOf('{', i); if (o < 0) break;
+      let d = 1, j = o + 1; while (j < txt.length && d) { if (txt[j] === '{') d++; else if (txt[j] === '}') d--; j++; }
+      const sel = txt.slice(i, o).trim(), bodyTxt = txt.slice(o + 1, j - 1), whole = txt.slice(i, j).trim();
+      const mm = top && sel.match(/^@media\s*\(\s*max-width\s*:\s*(\d+(?:\.\d+)?)px\s*\)$/);
+      if (mm) { const bp = +mm[1]; if (!P.bps.includes(bp)) P.bps.push(bp); rules(bodyTxt, bp, false); }
+      else if (/^@keyframes\s+we-/.test(sel)) { /* dibuat otomatis */ }
+      else {
+        const m = sel.match(/^(#[\w-]+|body)(?::(hover|active|focus))?$/), ml = sel.match(/^#([\w-]+)\s*>\s*legend$/);
+        if (ml && byId[ml[1]] && !mq) { Object.assign(byId[ml[1]].lg, parseDecls(bodyTxt)); stats.vis++; }
+        else if (m && byId[m[1].replace('#', '')]) { Object.assign(stMap(byId[m[1].replace('#', '')], m[2] || 'base', mq), parseDecls(bodyTxt)); stats.vis++; }
+        else if (sel) { extra.push(mq ? `@media (max-width: ${mq}px) {\n${whole}\n}` : whole); stats.extra++; }
+      }
+      i = j;
+    }
+  };
+  rules(s, null, true); P.bps.sort((x, y) => y - x);
+  const ex = extra.join('\n\n'); P.extra = merge && P.extra ? (ex ? P.extra + '\n\n' + ex : P.extra) : ex;
+  return stats;
+}
+
+/* ===== History / persistence ===== */
+const ser = () => JSON.stringify({ name: P.name, extra: P.extra, bps: P.bps, js: P.js || '', vg: P.vg || [], uid, sel: SEL, root: P.root });
+let hist = [], hi = -1, lastKey = '', lastT = 0;
+function pushHist(key) {
+  const s = ser(); if (hist[hi] === s) return;
+  if (key && key === lastKey && Date.now() - lastT < 900 && hi === hist.length - 1 && hi > 0) hist[hi] = s;
+  else { hist.splice(hi + 1); hist.push(s); if (hist.length > 150) hist.shift(); hi = hist.length - 1; }
+  lastKey = key || ''; lastT = Date.now();
+}
+function restore(s) { applyProject(JSON.parse(s)); $('#pname').value = P.name; fullRender(); }
+const undo = () => { if (hi > 0) { hi--; restore(hist[hi]); } };
+const redo = () => { if (hi < hist.length - 1) { hi++; restore(hist[hi]); } };
+/* ===== Penyimpanan proyek (localStorage) ===== */
+const IDX = 'webengine_index_v2', CURK = 'webengine_current_v2', PK = id => 'webengine_p_' + id, LEGACY = 'webengine_html_v1';
+let PID = null, ACTIVE = false, STORE_OK = true, failToasted = false;
+try { localStorage.setItem('__we', '1'); localStorage.removeItem('__we'); } catch (_) { STORE_OK = false; }
+const rdIdx = () => { try { return JSON.parse(localStorage.getItem(IDX)) || []; } catch (_) { return []; } };
+const wrIdx = x => { try { localStorage.setItem(IDX, JSON.stringify(x)); } catch (_) {} };
+const newPid = () => 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+const hhmm = () => new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+const setSaved = t => { const e = $('#saved'); if (e) e.textContent = t; };
+function blankProject(name) { return { name: name || 'Proyek baru', extra: '', bps: [1024, 768, 480], js: '', vg: [], root: newNode('body', 'body', {}) }; }
+const VS_KINDS = ['text', 'color', 'show', 'set', 'if', 'raw'];
+function fixSteps(a) { return (Array.isArray(a) ? a : []).slice(0, 500).map(s => { if (!s || typeof s !== 'object' || !VS_KINDS.includes(s.k)) return null; const o = { k: s.k }; ['to', 'v', 'p', 'n', 'op', 'c'].forEach(f => { if (s[f] != null) o[f] = String(s[f]); }); if ('on' in s) o.on = !!s.on; if (s.k === 'if') { o.then = fixSteps(s.then); o.else = fixSteps(s.else); } return o; }).filter(Boolean); }
+function fixVG(a) { return (Array.isArray(a) ? a : []).slice(0, 300).map(g => ({ id: String((g && g.id) || 'g' + Math.random().toString(36).slice(2, 7)), el: String((g && g.el) || 'body'), trig: { t: ['click', 'load', 'timer'].includes(g && g.trig && g.trig.t) ? g.trig.t : 'click', ms: Math.max(50, +(g && g.trig && g.trig.ms) || 1000) }, steps: fixSteps(g && g.steps) })); }
+function fixNode(n, isRoot) {
+  if (!n || typeof n !== 'object') return null;
+  const tag = String(n.tag || '').toLowerCase();
+  if (isRoot ? tag !== 'body' : !(ALLOW.has(tag) || tag === '#t')) return null;
+  const o = { k: 'n' + (uid++), tag, id: isRoot ? 'body' : slug(String(n.id || tag)) || tag, text: String(n.text || ''), legend: String(n.legend || ''), lg: n.lg && typeof n.lg === 'object' ? n.lg : {}, attrs: {}, st: mkStates(), mq: {}, ch: [], open: n.open !== false };
+  if (n.attrs && typeof n.attrs === 'object') for (const [k, v] of Object.entries(n.attrs)) if (safeAttr(k, String(v))) o.attrs[k] = String(v);
+  STATES.forEach(s => { if (n.st && n.st[s] && typeof n.st[s] === 'object') o.st[s] = { ...n.st[s] }; });
+  if (n.mq && typeof n.mq === 'object') for (const [bp, m] of Object.entries(n.mq)) { const x = mkStates(); STATES.forEach(s => { if (m && m[s]) x[s] = { ...m[s] }; }); o.mq[bp] = x; }
+  if (VOID.has(tag)) o.ch = []; else o.ch = (Array.isArray(n.ch) ? n.ch : []).map(c => fixNode(c, false)).filter(Boolean);
+  return o;
+}
+function normalizeProject(o) {
+  if (o && o.project) o = o.project;
+  if (!o || typeof o !== 'object' || !o.root) throw new Error('Bukan berkas proyek Web Engine');
+  const root = fixNode(o.root, true); if (!root) throw new Error('Struktur proyek tidak valid (akar harus body)');
+  const bps = (Array.isArray(o.bps) ? o.bps : [1024, 768, 480]).map(Number).filter(x => x >= 200 && x <= 3000);
+  return { name: String(o.name || 'Proyek impor').slice(0, 80), extra: String(o.extra || ''), js: String(o.js || ''), vg: fixVG(o.vg), bps: [...new Set(bps)], root };
+}
+function applyProject(o) {
+  const keepK = o && o.root && o.keepK;
+  const sel = o && o.sel, oldRoot = o.root;
+  // proyek tersimpan memakai k aslinya: pakai normalisasi dengan pemetaan k agar pilihan terakhir tetap ada
+  const map = new Map(); (function w(n) { if (n && typeof n === 'object') { map.set(n, n.k); (n.ch || []).forEach(w); } })(oldRoot);
+  const np = normalizeProject(o); P = { name: np.name, extra: np.extra, bps: np.bps, js: np.js, vg: np.vg, root: np.root };
+  SEL = P.root.k;
+  if (sel) { let hit = null; const srcFlat = []; (function w(n) { if (n) { srcFlat.push(n); (n.ch || []).forEach(w); } })(oldRoot); const dstFlat = []; walk(P.root, n => dstFlat.push(n)); const i = srcFlat.findIndex(n => n.k === sel); if (i >= 0 && dstFlat.length === srcFlat.length) hit = dstFlat[i]; if (hit) SEL = hit.k; }
+}
+function save(silent) {
+  if (!ACTIVE) return false;
+  if (!STORE_OK) { if (!silent) toast('Penyimpanan browser tidak tersedia di sini. Pakai Ekspor untuk menyimpan.'); setSaved('Tidak bisa menyimpan di browser ini'); return false; }
+  try {
+    const s = ser(); localStorage.setItem(PK(PID), s);
+    const idx = rdIdx(), e = idx.find(x => x.id === PID), m = { id: PID, name: P.name, updated: Date.now(), size: s.length };
+    if (e) Object.assign(e, m); else idx.push(m); wrIdx(idx); localStorage.setItem(CURK, PID);
+    setSaved('Tersimpan ' + hhmm()); failToasted = false; if (!silent) toast('Tersimpan di browser (di dalam engine)'); return true;
+  } catch (err) { setSaved('Gagal menyimpan'); if (!silent || !failToasted) toast('Gagal menyimpan: penyimpanan browser penuh. Hapus proyek lama atau pakai Ekspor.'); failToasted = true; return false; }
+}
+const autosave = (() => { let t; return () => { clearTimeout(t); setSaved('menyimpan…'); t = setTimeout(() => save(true), 700); }; })();
+function load() {
+  if (STORE_OK) {
+    const tryId = id => { try { const s = localStorage.getItem(PK(id)); if (!s) return false; applyProject(JSON.parse(s)); PID = id; return true; } catch (_) { return false; } };
+    const cur = localStorage.getItem(CURK); if (cur && tryId(cur)) return;
+    for (const e of rdIdx()) if (tryId(e.id)) return;
+    try { const lg = localStorage.getItem(LEGACY); if (lg) { applyProject(JSON.parse(lg)); PID = newPid(); return; } } catch (_) {}
+  }
+  P = blankProject(); SEL = P.root.k; PID = newPid();
+}
+function projectJSON() { return { format: 'webengine', version: 1, savedAt: new Date().toISOString(), project: JSON.parse(ser()) }; }
+const slugFile = s => (s || 'proyek').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'proyek';
+/* ===== Canvas (Shadow DOM) ===== */
+const host = $('#host'), sh = host.attachShadow({ mode: 'open' });
+const PH = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="160" height="100"><rect width="100%" height="100%" fill="#d9dde4"/><text x="50%" y="50%" fill="#8a93a3" font-family="sans-serif" font-size="14" text-anchor="middle" dy=".35em">gambar</text></svg>');
+sh.innerHTML = '<style id="bs">:host{all:initial;display:block}.page{min-height:inherit;box-sizing:border-box;display:flow-root}</style><style id="us"></style><div class="page"></div>';
+const usEl = $('#us', sh);
+let pageEl = $('.page', sh);
+const liveEl = n => !n ? null : (n === P.root ? pageEl : sh.querySelector(`[data-nid="${n.k}"]`));
+function renderStyle() { usEl.textContent = emulateMedia(genCSS('.page').replace(/(^|[}\s,])body(?=[\s{,:.#\[>+~])/g, '$1.page'), host.getBoundingClientRect().width); }
+function renderDom() {
+  const mk = n => {
+    if (n.tag === '#t') return document.createTextNode(n.text);
+    const e = document.createElement(n.tag); e.dataset.nid = n.k; e.id = n.id;
+    for (const [k, v] of Object.entries(n.attrs)) { if (safeAttr(k, v)) try { e.setAttribute(k, v); } catch (_) {} }
+    if (n.tag === 'img' && !n.attrs.src) e.src = PH;
+    if (n.legend) { const lg = document.createElement('legend'); lg.textContent = n.legend; e.append(lg); }
+    if (n.text) e.append(document.createTextNode(n.text));
+    n.ch.forEach(c => e.append(mk(c)));
+    return e;
+  };
+  const pg = document.createElement('div'); pg.className = 'page'; pg.dataset.nid = P.root.k;
+  P.root.ch.forEach(c => pg.append(mk(c)));
+  pageEl.replaceWith(pg); pageEl = pg; renderStyle();
+}
+const nidEl = e => e.composedPath().find(x => x.dataset && x.dataset.nid);
+const selB = $('#selB'), hovB = $('#hovB'), cv = $('#cv'), wrap = $('#wrap');
+function boxFor(b, n) {
+  const e = liveEl(n);
+  if (!e || preview || !n) { b.style.display = 'none'; return; }
+  const r = e.getBoundingClientRect(), c = cv.getBoundingClientRect(), z = ZM;
+  Object.assign(b.style, { display: 'block', left: (r.left - c.left) / z + 'px', top: (r.top - c.top) / z + 'px', width: r.width / z + 'px', height: r.height / z + 'px' });
+  return e;
+}
+function placeHandles() {
+  const hr = host.getBoundingClientRect(), c = cv.getBoundingClientRect(), z = ZM; const top = (hr.top - c.top) / z, ht = Math.max(120, Math.min(hr.height / z, wrap.clientHeight / z));
+  [['L', (hr.left - c.left) / z - 14], ['R', (hr.right - c.left) / z]].forEach(([s, x]) => { const e = $('#wh' + s); e.style.left = x + 'px'; e.style.top = top + 'px'; e.style.height = ht + 'px'; e.style.display = preview ? 'none' : ''; });
+}
+const isBlank = () => { const r = P.root, k = o => Object.keys(o || {}).length; return !r.ch.length && !k(r.attrs) && !P.extra && !k(r.mq) && !(r.st && STATES.some(s => k(r.st[s]))); };
+function placeOv() {
+  if (typeof drawVis === 'function' && typeof vsSig !== 'undefined') drawVis();
+  const bl = isBlank() && !preview; host.classList.toggle('empty', bl); $('#cv').classList.toggle('empty', bl);
+  placeHandles(); if (typeof updWro === 'function') updWro();
+  const n = byK(SEL), e = boxFor(selB, n);
+  if (e) { $('.lbl', selB).textContent = (n === P.root ? H('Halaman', 'body') : n.id + ' · ' + kind(n.tag)); const cs = getComputedStyle(e); selB.classList.toggle('rzok', n !== P.root && cs.display !== 'inline' && !preview); }
+  $('#selinfo').textContent = n ? (n === P.root ? H('Halaman', 'body') : n.id) : '';
+  if (bl) { selB.style.display = 'none'; hovB.style.display = 'none'; }
+}
+const placeOvR = rafT(placeOv);
+new ResizeObserver(placeOvR).observe(wrap); wrap.addEventListener('scroll', placeOvR);
+const devLabel = w => w <= 360 ? 'HP kecil' : w <= 480 ? 'HP tegak' : w <= 600 ? 'HP besar' : w <= 768 ? 'Tablet' : w <= 1024 ? 'Tablet mendatar / laptop kecil' : w <= 1366 ? 'Laptop' : 'Layar lebar';
+const WPRE = [1366, 1280, 1024, 768, 600, 480, 375];
+function fillWsel() { const sel = $('#wsel'); sel.innerHTML = ''; sel.append(el('option', { value: '', text: 'Penuh (mengikuti ruang yang ada)' }), ...WPRE.map(w => el('option', { value: String(w), text: w + ' · ' + devLabel(w) }))); }
+fillWsel();
+function setWidth(w, quiet) {
+  const sel = $('#wsel'); w = w ? Math.max(240, Math.min(3000, Math.round(w))) : null;
+  let o = [...sel.options].find(x => x.value === String(w));
+  if (w && !o) { o = $('#wcust') || el('option', { id: 'wcust' }); o.value = String(w); o.textContent = w + ' · ' + devLabel(w) + ' (kustom)'; if (!o.isConnected) sel.append(o); } else if ($('#wcust') && w !== +$('#wcust').value) $('#wcust').remove();
+  sel.value = w ? String(w) : ''; host.style.width = w ? w + 'px' : '100%';
+  L.cw = w; if (!quiet) saveL(); renderStyle(); placeOvR(); updWro();
+}
+function updWro() { const w = Math.round(host.getBoundingClientRect().width); $('#wro').textContent = w + ' px · ' + devLabel(w); }
+$('#wsel').addEventListener('change', e => setWidth(e.target.value ? +e.target.value : null));
+['L', 'R'].forEach(side => {
+  const hd = $('#wh' + side);
+  hd.addEventListener('pointerdown', e => {
+    if (L.lock || e.button !== 0) return; e.preventDefault(); cap(e, hd); hd.classList.add('act');
+    const x0 = e.clientX, w0 = host.getBoundingClientRect().width; document.body.classList.add('dragging');
+    const mv = rafT(ev => { let w = w0 + (side === 'R' ? 1 : -1) * (ev.clientX - x0) / ZM * 2; const sn = P.bps.find(bp => Math.abs(bp - w) <= 10); if (sn) w = sn; setWidth(w, true); });
+    const on = ev => mv(ev), up = () => { hd.removeEventListener('pointermove', on); hd.removeEventListener('pointerup', up); hd.removeEventListener('pointercancel', up); hd.classList.remove('act'); document.body.classList.remove('dragging'); saveL(); };
+    hd.addEventListener('pointermove', on); hd.addEventListener('pointerup', up); hd.addEventListener('pointercancel', up);
+  });
+  hd.addEventListener('dblclick', () => { if (!L.lock) setWidth(null); });
+});
+function applyLock() { $('#lockB').textContent = L.lock ? '🔒 Terkunci' : '🔓 Bebas'; $('#lockB').classList.toggle('on', !!L.lock); $('#whL').classList.toggle('lk', !!L.lock); $('#whR').classList.toggle('lk', !!L.lock); }
+$('#lockB').addEventListener('click', () => { L.lock = !L.lock; saveL(); applyLock(); toast(L.lock ? 'Lebar kanvas dikunci: tidak bisa diseret' : 'Lebar kanvas bisa diseret lagi'); });
+let lastW = 0; new ResizeObserver(() => { const w = host.getBoundingClientRect().width; if (Math.abs(w - lastW) > 0.5) { lastW = w; renderStyle(); placeOvR(); } }).observe(host);
+let cdrag = null;
+host.addEventListener('click', e => e.preventDefault(), true);
+host.addEventListener('pointermove', e => { if (cdrag || preview) return; const t = nidEl(e); const n = t && byK(t.dataset.nid); if (n && n.k !== SEL) boxFor(hovB, n); else hovB.style.display = 'none'; });
+host.addEventListener('pointerleave', () => hovB.style.display = 'none');
+host.addEventListener('pointerdown', e => {
+  if (preview || e.button !== 0) return;
+  const t = nidEl(e); if (!t) return; e.preventDefault();
+  const n = byK(t.dataset.nid); if (!n) return;
+  if (n.k !== SEL) select(n.k);
+  const el0 = liveEl(n), cs = getComputedStyle(el0);
+  if (n === P.root || !/^(absolute|fixed|relative)$/.test(cs.position)) return;
+  cdrag = { mode: 'move', n, el: el0, x: e.clientX, y: e.clientY, l: parseFloat(cs.left) || 0, t: parseFloat(cs.top) || 0, moved: false };
+  cap(e, host); hovB.style.display = 'none';
+});
+$('.rz', selB).addEventListener('pointerdown', e => {
+  e.preventDefault(); e.stopPropagation(); const n = byK(SEL), el0 = liveEl(n); if (!el0) return;
+  cdrag = { mode: 'size', n, el: el0, x: e.clientX, y: e.clientY, w: el0.offsetWidth, h: el0.offsetHeight, moved: true }; cap(e, e.target);
+  const mv = ev => host.dispatchEvent(new PointerEvent('pointermove', ev)), up = ev => { e.target.removeEventListener('pointermove', cmove); e.target.removeEventListener('pointerup', cup); cup(ev); };
+  e.target.addEventListener('pointermove', cmove); e.target.addEventListener('pointerup', cup); e.target.addEventListener('pointercancel', cup);
+});
+function cmove(e) {
+  if (!cdrag) return; const dx = (e.clientX - cdrag.x) / ZM, dy = (e.clientY - cdrag.y) / ZM;
+  if (!cdrag.moved && Math.abs(dx) + Math.abs(dy) < 3) return; cdrag.moved = true; document.body.classList.add('dragging');
+  const c = cdrag;
+  if (c.mode === 'move') { c.nl = Math.round(c.l + dx); c.nt = Math.round(c.t + dy); c.el.style.left = c.nl + 'px'; c.el.style.top = c.nt + 'px'; c.el.style.right = 'auto'; c.el.style.bottom = 'auto'; }
+  else { c.nw = Math.max(4, Math.round(c.w + dx)); c.nh = Math.max(4, Math.round(c.h + dy)); c.el.style.width = c.nw + 'px'; c.el.style.height = c.nh + 'px'; }
+  placeOvR();
+}
+function cup() {
+  const c = cdrag; cdrag = null; document.body.classList.remove('dragging'); if (!c) return;
+  c.el.style.left = c.el.style.top = c.el.style.right = c.el.style.bottom = c.el.style.width = c.el.style.height = '';
+  if (!c.moved) return;
+  const S = stMap(c.n, 'base', MQ);
+  if (c.mode === 'move' && c.nl != null) { S.left = c.nl + 'px'; S.top = c.nt + 'px'; delete S.right; delete S.bottom; commit('move'); }
+  else if (c.mode === 'size' && c.nw != null) { S.width = c.nw + 'px'; S.height = c.nh + 'px'; commit('size'); }
+}
+host.addEventListener('pointermove', cmove); host.addEventListener('pointerup', cup); host.addEventListener('pointercancel', cup);
+
+/* ===== Select / commit ===== */
+function select(k, fromTree) {
+  SEL = k; const n = byK(k); if (n) { let p = parentOf(n); while (p) { p.open = true; p = parentOf(p); } }
+  renderTree(); buildInsp(); placeOv(); hovB.style.display = 'none';
+  if (fromTree) { const e = liveEl(n); if (e && e.scrollIntoView) e.scrollIntoView({ block: 'nearest', inline: 'nearest' }); placeOvR(); }
+}
+function commit(key, o = {}) {
+  pushHist(key);
+  if (o.dom) renderDom(); else renderStyle();
+  if (o.tree) renderTree();
+  if (o.build) buildInsp(); else refreshInsp();
+  placeOv(); syncCode(); autosave(); updUndo();
+}
+function fullRender() { renderDom(); renderTree(); buildInsp(); placeOv(); syncCode(); updUndo(); autosave(); }
+const updUndo = () => { $('#undoB').disabled = hi <= 0; $('#redoB').disabled = hi >= hist.length - 1; };
+
+/* ===== Tree ===== */
+const tree = $('#tree');
+function renderTree() {
+  tree.innerHTML = '';
+  if (isBlank()) { tree.append(el('div', { class: 'small', style: 'padding:14px;line-height:1.5', text: 'Masih kosong. Klik tombol + Elemen di atas untuk membuat elemen pertama, atau Impor file.' })); return; }
+  const add = (n, d) => {
+    const isRoot = n === P.root;
+    const r = el('div', { class: 'row' + (n.k === SEL ? ' sel' : ''), 'data-k': n.k, style: `padding-left:${6 + d * 14}px` });
+    r.append(el('span', { class: 'car', text: n.ch.length ? (n.open ? '▾' : '▸') : '' }), el('span', { class: 'nm', text: isRoot ? H('Halaman', 'body') : n.tag === '#t' ? '“' + n.text.slice(0, 30) + (n.text.length > 30 ? '…' : '') + '”' : n.id }), el('span', { class: 'tg', text: n.tag === '#t' ? H('teks mentah', 'text') : kind(n.tag) }));
+    if (!isRoot) r.append(el('span', { class: 'ac' }, el('b', { title: 'Tambah child', 'data-a': 'add', text: '+' }), el('b', { title: 'Duplikat', 'data-a': 'dup', text: '⧉' }), el('b', { title: 'Hapus', 'data-a': 'del', text: '✕' })));
+    else r.append(el('span', { class: 'ac' }, el('b', { title: 'Tambah child', 'data-a': 'add', text: '+' })));
+    tree.append(r);
+    if (n.open) n.ch.forEach(c => add(c, d + 1));
+  };
+  add(P.root, 0);
+}
+let tdrag = null;
+tree.addEventListener('pointerdown', e => {
+  const r = e.target.closest('.row'); if (!r || e.button !== 0) return;
+  const n = byK(r.dataset.k), a = e.target.closest('[data-a]');
+  if (e.target.classList.contains('car')) { n.open = !n.open; renderTree(); return; }
+  if (a) { e.preventDefault(); const k = a.dataset.a; if (k === 'add') { select(n.k); showAddMenu(e.clientX, e.clientY, n); } else if (k === 'dup') dupNode(n); else delNode(n); return; }
+  if (n.k !== SEL) select(n.k, true);
+  if (n === P.root) return;
+  tdrag = { n, x: e.clientX, y: e.clientY, on: false, tgt: null, zone: '' };
+  cap(e, tree);
+});
+tree.addEventListener('pointermove', e => {
+  const t = tdrag; if (!t) return;
+  if (!t.on) { if (Math.abs(e.clientX - t.x) + Math.abs(e.clientY - t.y) < 5) return; t.on = true; t.g = el('div', { class: 'ghost', text: t.n.id }); document.body.append(t.g); document.body.classList.add('dragging'); }
+  t.g.style.left = e.clientX + 12 + 'px'; t.g.style.top = e.clientY + 8 + 'px';
+  $$('.row', tree).forEach(x => x.classList.remove('dzb', 'dza', 'dzi'));
+  const re = document.elementFromPoint(e.clientX, e.clientY), r = re && re.closest && re.closest('.row'); t.tgt = null;
+  if (!r || !tree.contains(r)) return;
+  const tn = byK(r.dataset.k); if (!tn) return;
+  let inside = false; walk(t.n, x => { if (x === tn) inside = true; }); if (inside) return;
+  const b = r.getBoundingClientRect(), f = (e.clientY - b.top) / b.height;
+  let zone = f < .28 ? 'b' : f > .72 ? 'a' : 'i';
+  if (tn === P.root) zone = 'i'; if (zone === 'i' && VOID.has(tn.tag)) zone = f < .5 ? 'b' : 'a';
+  t.tgt = tn; t.zone = zone; r.classList.add(zone === 'b' ? 'dzb' : zone === 'a' ? 'dza' : 'dzi');
+});
+const tup = () => {
+  const t = tdrag; tdrag = null; if (!t) return; document.body.classList.remove('dragging');
+  if (t.g) t.g.remove(); $$('.row', tree).forEach(x => x.classList.remove('dzb', 'dza', 'dzi'));
+  if (!t.on || !t.tgt) return;
+  const src = t.n, p0 = parentOf(src); p0.ch.splice(p0.ch.indexOf(src), 1);
+  if (t.zone === 'i') { t.tgt.ch.push(src); t.tgt.open = true; } else { const p = parentOf(t.tgt); p.ch.splice(p.ch.indexOf(t.tgt) + (t.zone === 'a' ? 1 : 0), 0, src); }
+  SEL = src.k; commit('move-node', { dom: true, tree: true, build: true });
+};
+tree.addEventListener('pointerup', tup); tree.addEventListener('pointercancel', tup);
+tree.addEventListener('dblclick', e => {
+  const r = e.target.closest('.row'); if (!r || e.target.closest('[data-a]') || e.target.classList.contains('car')) return;
+  const n = byK(r.dataset.k); if (n === P.root || n.tag === '#t') return;
+  const nm = $('.nm', r), inp = el('input', { value: n.id, style: 'width:100%' }); nm.replaceWith(inp); inp.focus(); inp.select();
+  const done = ok => { if (!inp.isConnected) return; if (ok && inp.value.trim()) { n.id = uniqueId(inp.value, n); commit('rename', { dom: true, tree: true, build: true }); } else renderTree(); };
+  inp.addEventListener('keydown', ev => { if (ev.key === 'Enter') done(true); if (ev.key === 'Escape') done(false); }); inp.addEventListener('blur', () => done(true));
+});
+
+/* ===== Add / dup / delete ===== */
+const bx = (o = {}) => ({ base: o, hover: {}, active: {}, focus: {} });
+const sides = (p, v) => Object.fromEntries(SIDES.map(s => [p + '-' + s, v]));
+const PRESETS = [
+  { l: 'Blok polos', tl: 'Div (blok polos)', d: 'Kotak kosong. Bisa diisi blok atau teks lain, diberi warna, garis, dan bayangan.', tag: 'div', id: 'blok', st: { width: '120px', height: '80px', 'background-color': '#ffffff', 'border-style': 'solid', 'border-width': '1px', 'border-color': '#cccccc' } },
+  { l: 'Teks', tl: 'Text (p)', d: 'Tulisan. Ukuran, warna, dan hurufnya diatur di Pengaturan.', tag: 'p', id: 'teks', text: 'Teks baru', st: {} }
+];
+function addEl(p, parentNode) {
+  let par = parentNode || cur(), idx = null;
+  if (VOID.has(par.tag)) { const gp = parentOf(par); idx = gp.ch.indexOf(par) + 1; par = gp; }
+  const n = newNode(p.tag, uniqueId(p.id || p.tag), { text: p.text || '', attrs: { ...(p.attrs || {}) }, st: bx({ ...p.st }) });
+  (p.kids || []).forEach(t => n.ch.push(newNode('li', uniqueId('item'), { text: t, st: bx() })));
+  if (idx == null) par.ch.push(n); else par.ch.splice(idx, 0, n);
+  par.open = true; SEL = n.k; commit('add', { dom: true, tree: true, build: true });
+}
+function cloneNode(n) { const c = JSON.parse(JSON.stringify(n)); walk(c, x => { x.k = 'n' + (uid++); }); const base = c.id; walk(c, (x) => { x.id = '__' + x.id; }); return c; }
+function dupNode(n) {
+  if (n === P.root) return; const p = parentOf(n), c = cloneNode(n);
+  p.ch.splice(p.ch.indexOf(n) + 1, 0, c); walk(c, x => { x.id = x.tag === '#t' ? '' : uniqueId(x.id.replace(/^__/, '') + '-salin', x); });
+  const css = {}; SEL = c.k; commit('dup', { dom: true, tree: true, build: true });
+}
+function delNode(n) { if (n === P.root) return; const p = parentOf(n), i = p.ch.indexOf(n); p.ch.splice(i, 1); SEL = (p.ch[i] || p.ch[i - 1] || p).k; commit('del', { dom: true, tree: true, build: true }); }
+let menuEl = null;
+function closeMenu() { if (menuEl) { menuEl.remove(); menuEl = null; } }
+function showCanvasMenu(x, y, n) {
+  closeMenu(); const isRoot = n === P.root, t = n;
+  const item = (text, fn, extra) => el('button', { text, onclick: () => { closeMenu(); fn(); }, ...(extra || {}) });
+  menuEl = el('div', { class: 'menu' }, el('div', { class: 'hd', text: isRoot ? 'Halaman (body)' : n.id + ' · ' + kind(n.tag) }),
+    ...(VOID.has(t.tag) ? [] : [item(H('Tambah blok polos di sini', 'Tambah div di sini'), () => addEl(PRESETS[0], t))]),
+    ...(VOID.has(t.tag) ? [] : [item(H('Tambah teks di sini', 'Tambah p di sini'), () => addEl(PRESETS[1], t))]),
+    ...(isRoot ? [] : [el('hr', { style: 'border:0;border-top:1px solid var(--bd);margin:4px 0' }), item('Duplikat', () => dupNode(n)), item('Hapus', () => delNode(n))]));
+  document.body.append(menuEl); const w = menuEl.getBoundingClientRect();
+  menuEl.style.left = Math.max(4, Math.min(x, innerWidth - w.width - 6)) + 'px'; menuEl.style.top = Math.max(4, Math.min(y, innerHeight - w.height - 6)) + 'px';
+}
+function showAddMenu(x, y, target) {
+  closeMenu(); const t = target || cur();
+  menuEl = el('div', { class: 'menu' }, el('div', { class: 'hd', text: 'Tambah ke dalam: ' + (t === P.root ? 'halaman' : t.id) }), ...PRESETS.map(p => el('button', { title: p.d, text: H(p.l, p.tl), onclick: () => { closeMenu(); addEl(p, VOID.has(t.tag) ? null : t); } })));
+  document.body.append(menuEl); const w = menuEl.getBoundingClientRect();
+  menuEl.style.left = Math.max(4, Math.min(x, innerWidth - w.width - 6)) + 'px'; menuEl.style.top = Math.max(4, Math.min(y, innerHeight - w.height - 6)) + 'px';
+}
+document.addEventListener('pointerdown', e => { if (menuEl && !menuEl.contains(e.target) && e.target.id !== 'addB') closeMenu(); }, true);
+$('#addB').addEventListener('click', e => { const b = e.currentTarget.getBoundingClientRect(); showAddMenu(b.left, b.bottom + 4); });
+
+/* ===== Code panels ===== */
+const taH = $('#taH'), taC = $('#taC');
+function syncCode() {
+  if (document.activeElement !== taH) { taH.value = genHTML(P.root.ch); $('#stH').textContent = ''; }
+  if (document.activeElement !== taC) { taC.value = genCSS(); $('#stC').textContent = ''; }
+  if (document.activeElement !== taJ) taJ.value = P.js || '';
+}
+function status(id, txt, cls) { const s = $(id); s.textContent = txt; s.className = 'st ' + (cls || ''); }
+const onH = (() => { let t; return () => { clearTimeout(t); status('#stH', 'mengetik…'); t = setTimeout(() => { const d = importHTML(taH.value); if (!byK(SEL)) SEL = P.root.k; commit('code-h', { dom: true, tree: true, build: true }); status('#stH', d ? `${d} elemen tak didukung dibuang` : '✓ tersinkron', d ? 'er' : 'ok'); }, 600); }; })();
+const onC = (() => { let t; return () => { clearTimeout(t); status('#stC', 'mengetik…'); t = setTimeout(() => { importCSS(taC.value); commit('code-c', {}); status('#stC', '✓ tersinkron', 'ok'); }, 600); }; })();
+const taJ = $('#taJ');
+const onJ = (() => { let t; return () => { clearTimeout(t); status('#stJ', 'mengetik…'); t = setTimeout(() => { P.js = taJ.value; commit('code-j', {}); runLiveSoon(); status('#stJ', '✓ dijalankan ulang', 'ok'); }, 600); }; })();
+taH.addEventListener('input', onH); taC.addEventListener('input', onC); taJ.addEventListener('input', onJ);
+[taH, taC, taJ].forEach(t => { t.addEventListener('keydown', e => { if (e.key === 'Tab') { e.preventDefault(); const s = t.selectionStart; t.setRangeText('  ', s, t.selectionEnd, 'end'); t.dispatchEvent(new Event('input')); } }); t.addEventListener('blur', syncCode); });
+
+/* ===== Layout / splitters ===== */
+const DEF = { l: { w: 240, min: 0 }, r: { w: 320, min: 0 }, b: { h: 250, min: 0 }, sec: {} };
+let L = JSON.parse(JSON.stringify(DEF)); try { const s = JSON.parse(localStorage.getItem('webengine_layout_v6')); if (s) L = Object.assign(L, s); } catch (_) {}
+const appEl = $('#app'), setV = (k, v) => appEl.style.setProperty(k, v);
+TECH = L.tech !== false;
+function setTech(v) { TECH = v; L.tech = v; saveL(); $('#termB').textContent = 'Istilah: ' + (v ? 'Web' : 'Awam'); renderTree(); buildInsp(); placeOv(); }
+$('#termB').addEventListener('click', () => setTech(!TECH));
+$('#termB').textContent = 'Istilah: ' + (TECH ? 'Web' : 'Awam');
+function applyLayout() {
+  L.l.w = Math.max(160, Math.min(L.l.w, Math.max(160, innerWidth * .4))); L.r.w = Math.max(220, Math.min(L.r.w, Math.max(220, innerWidth * .5))); L.b.h = Math.max(100, Math.min(L.b.h, Math.max(100, innerHeight * .7)));
+  setV('--lw', L.l.min ? '28px' : L.l.w + 'px'); setV('--slw', L.l.min ? '0px' : 'var(--sw)');
+  setV('--rw', L.r.min ? '28px' : L.r.w + 'px'); setV('--srw', L.r.min ? '0px' : 'var(--sw)');
+  setV('--bh', L.b.min ? '28px' : L.b.h + 'px'); setV('--sbh', L.b.min ? '0px' : 'var(--sw)');
+  $('#dL').classList.toggle('min', !!L.l.min); $('#dR').classList.toggle('min', !!L.r.min); $('#dB').classList.toggle('min', !!L.b.min);
+  $('#sL').classList.toggle('off', !!L.l.min); $('#sR').classList.toggle('off', !!L.r.min); $('#sB').classList.toggle('off', !!L.b.min);
+  placeOvR();
+}
+const saveL = () => { try { localStorage.setItem('webengine_layout_v6', JSON.stringify(L)); } catch (_) {} };
+function splitter(sp, axis, get, set, reset) {
+  sp.addEventListener('pointerdown', e => {
+    if (e.button !== 0) return; e.preventDefault(); cap(e, sp);
+    const s0 = axis === 'x' ? e.clientX : e.clientY, v0 = get(); document.body.classList.add('dragging'); sp.classList.add('act');
+    const mv = rafT(ev => { set(v0, (axis === 'x' ? ev.clientX : ev.clientY) - s0); applyLayout(); });
+    const onm = ev => mv(ev);
+    const up = () => { sp.removeEventListener('pointermove', onm); sp.removeEventListener('pointerup', up); sp.removeEventListener('pointercancel', up); document.body.classList.remove('dragging'); sp.classList.remove('act'); saveL(); };
+    sp.addEventListener('pointermove', onm); sp.addEventListener('pointerup', up); sp.addEventListener('pointercancel', up);
+  });
+  sp.addEventListener('dblclick', () => { reset(); applyLayout(); saveL(); });
+}
+splitter($('#sL'), 'x', () => L.l.w, (v, d) => L.l.w = v + d, () => L.l.w = DEF.l.w);
+splitter($('#sR'), 'x', () => L.r.w, (v, d) => L.r.w = v - d, () => L.r.w = DEF.r.w);
+splitter($('#sB'), 'y', () => L.b.h, (v, d) => L.b.h = v - d, () => L.b.h = DEF.b.h);
+$$('[data-min]').forEach(b => b.addEventListener('click', () => { L[b.dataset.min].min = 1; applyLayout(); saveL(); }));
+$$('[data-exp]').forEach(b => b.addEventListener('click', () => { L[b.dataset.exp].min = 0; applyLayout(); saveL(); }));
+addEventListener('resize', applyLayout);
+
+/* ===== Modals / export ===== */
+const modal = $('#modal'), mb = $('#mb');
+const openModal = (...k) => { mb.innerHTML = ''; mb.append(...k); modal.classList.add('on'); };
+const closeModal = () => modal.classList.remove('on');
+modal.addEventListener('pointerdown', e => { if (e.target === modal) closeModal(); });
+let dlCap = null;
+if (window.claude && window.claude.use) window.claude.use('downloads').then(d => dlCap = d).catch(() => {});
+async function dlFile(f) {
+  if (dlCap) { try { await dlCap.save({ filename: f.name, data: f.text }); } catch (_) { toast('Unduhan ' + f.name + ' dibatalkan'); } return; }
+  const a = el('a', { href: URL.createObjectURL(new Blob([f.text], { type: 'text/plain' })), download: f.name }); document.body.append(a); a.click(); a.remove();
+}
+function exportModal() {
+  let split = false, vp = false;
+  const list = el('div'), draw = () => { list.innerHTML = ''; [...fullDoc(split, vp), { name: slugFile(P.name) + '.json', text: JSON.stringify(projectJSON(), null, 2), backup: true }].forEach(f => list.append(el('div', { class: 'fl' }, el('span', { text: f.name }), el('span', { class: 'small', text: (f.backup ? 'cadangan proyek · ' : '') + (f.text.length / 1024).toFixed(1) + ' KB' }), el('button', { class: 'pri', text: 'Unduh', onclick: () => dlFile(f) }), el('button', { text: 'Salin', onclick: () => { navigator.clipboard && navigator.clipboard.writeText(f.text).then(() => toast('Disalin: ' + f.name)).catch(() => toast('Salin gagal')); } })))); };
+  const r = (v, t) => el('label', { class: 'ck' }, el('input', { type: 'radio', name: 'fm', ...(v === split ? { checked: true } : {}), onchange: () => { split = v; draw(); } }), t);
+  openModal(el('h3', { text: 'Ekspor' }), r(false, 'Satu file HTML (CSS di dalam)'), r(true, 'Pisah: index.html + style.css (diunduh satu per satu)'),
+    el('label', { class: 'ck' }, el('input', { type: 'checkbox', onchange: e => { vp = e.target.checked; draw(); } }), 'Sertakan meta viewport (untuk game/web yang mau dibuka di HP)'), list,
+    el('p', { class: 'small', text: 'Simpan = di dalam engine saja (penyimpanan browser). Ekspor = file yang kamu unduh. File .json adalah cadangan lengkap proyek yang bisa diimpor kembali lewat tombol Impor.' }), el('div', { class: 'btns' }, el('button', { text: 'Tutup', onclick: closeModal }))); draw();
+}
+$('#expB').addEventListener('click', exportModal);
+$('#saveB').addEventListener('click', () => save());
+$('#helpB').addEventListener('click', () => openModal(el('h3', { text: 'Cara pakai' }), el('div', { html: '' }, ...['Daftar elemen (kiri): klik untuk memilih, seret untuk memindahkan atau memasukkan ke dalam elemen lain, klik dua kali untuk ganti nama, tombol + untuk menambah isi di dalamnya.', 'Kanvas (tengah): klik elemen untuk memilih. Elemen yang penempatannya "Bebas" atau "Geser" bisa diseret langsung, dan kotak kecil di pojok kanan bawah mengubah ukuran.', 'Pengaturan (kanan): semua tampilan elemen. Baris yang pudar tidak berpengaruh pada elemen ini, arahkan kursor untuk tahu alasannya. Tab Disorot, Ditekan, dan Terfokus mengatur tampilan saat kondisi itu terjadi.', 'Kode (bawah): HTML dan CSS dua arah. Ketik kode, daftar dan pengaturan ikut berubah, dan sebaliknya.', 'Tombol Visual Script (JS) menyusul di tahap berikutnya.', 'Pintasan: Ctrl+Z/Y urungkan/ulangi, Ctrl+S simpan, Ctrl+D salin elemen, Delete hapus.'].map(t => el('p', { text: t }))), el('div', { class: 'btns' }, el('button', { class: 'pri', text: 'Mengerti', onclick: closeModal }))));
+$('#undoB').addEventListener('click', undo); $('#redoB').addEventListener('click', redo);
+$('#prevB').addEventListener('click', e => { preview = !preview; e.currentTarget.classList.toggle('on', preview); placeOv(); hovB.style.display = 'none'; });
+$('#pname').addEventListener('input', e => { P.name = e.target.value; autosave(); });
+$('#pname').addEventListener('keydown', e => { if (e.key === 'Enter') e.target.blur(); });
+addEventListener('keydown', e => {
+  const t = e.target; if (/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return; const c = e.ctrlKey || e.metaKey;
+  if (c && e.key.toLowerCase() === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); }
+  else if (c && e.key.toLowerCase() === 'y') { e.preventDefault(); redo(); }
+  else if (c && e.key.toLowerCase() === 's') { e.preventDefault(); save(); }
+  else if (c && e.key.toLowerCase() === 'd') { e.preventDefault(); dupNode(cur()); }
+  else if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); delNode(cur()); }
+  else if (e.key === 'Escape') { closeMenu(); closeModal(); }
+});
+
+/* ===== Proyek & impor ===== */
+const resetHistory = () => { hist = []; hi = -1; pushHist(); updUndo(); };
+function switchTo(setup) { save(true); setup(); ACTIVE = true; MQ = null; state = 'base'; $('#pname').value = P.name; fullRender(); resetHistory(); setWidth(L.cw || null, true); save(true); }
+function openProject(id) { let o = null; try { o = JSON.parse(localStorage.getItem(PK(id))); } catch (_) {} if (!o) return toast('Proyek tidak ditemukan'); switchTo(() => { applyProject(o); PID = id; }); }
+function createProject(p0) { switchTo(() => { P = p0 || blankProject(); SEL = P.root.k; PID = newPid(); }); }
+function dupProject(id) { try { const o = JSON.parse(localStorage.getItem(PK(id))); o.name = (o.name || 'Proyek') + ' (salinan)'; const nid = newPid(); const s = JSON.stringify(o); localStorage.setItem(PK(nid), s); const idx = rdIdx(); idx.push({ id: nid, name: o.name, updated: Date.now(), size: s.length }); wrIdx(idx); } catch (e) { toast('Gagal menyalin: ' + e.message); } }
+function deleteProject(id) {
+  try { localStorage.removeItem(PK(id)); wrIdx(rdIdx().filter(x => x.id !== id)); } catch (_) {}
+  if (id === PID) { ACTIVE = false; P = blankProject(); SEL = P.root.k; PID = newPid(); try { if (localStorage.getItem(CURK) === id) localStorage.removeItem(CURK); } catch (_) {} fullRender(); }
+}
+function renameProject(id, name) { name = (name || '').trim().slice(0, 80) || 'Proyek'; if (id === PID) { P.name = name; $('#pname').value = name; save(true); return; } try { const o = JSON.parse(localStorage.getItem(PK(id))); o.name = name; localStorage.setItem(PK(id), JSON.stringify(o)); const idx = rdIdx(), e = idx.find(x => x.id === id); if (e) e.name = name; wrIdx(idx); } catch (_) {} }
+const pm = $('#pm'), hideMgr = () => pm.classList.remove('on');
+function showManager() {
+  save(true); pm.classList.add('on'); const wrapE = el('div', { class: 'wrap' }), body = el('div');
+  const draw = () => {
+    body.innerHTML = ''; const idx = rdIdx().sort((x, y) => y.updated - x.updated); const total = idx.reduce((s, x) => s + (x.size || 0), 0);
+    if (!STORE_OK) body.append(el('p', { style: 'color:var(--er)', text: 'Penyimpanan browser tidak tersedia (mungkin mode privat). Proyek tidak bisa disimpan di sini, gunakan Ekspor untuk menyimpan.' }));
+    if (!idx.length) body.append(el('p', { class: 'small', style: 'padding:20px 0', text: 'Belum ada proyek. Buat proyek kosong, muat contoh, atau impor file untuk mulai.' }));
+    idx.forEach(x => {
+      const row = el('div', { class: 'pr' + (ACTIVE && x.id === PID ? ' cur' : ''), ondblclick: () => go(x.id) });
+      const nm = el('div', { class: 'nm', onclick: () => go(x.id) }, el('b', { text: x.name + (ACTIVE && x.id === PID ? '  (sedang dibuka)' : '') }), el('span', { class: 'small', text: 'diubah ' + new Date(x.updated).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) + ' · ' + (x.size / 1024).toFixed(1) + ' KB' }));
+      row.append(nm, el('button', { class: 'pri', text: 'Buka', onclick: e => { e.stopPropagation(); go(x.id); } }));
+      let sure = false; const del = el('button', { text: 'Hapus', onclick: e => { e.stopPropagation(); if (sure) { deleteProject(x.id); showManager(); } else { sure = true; del.textContent = 'Klik lagi untuk menghapus'; } } });
+      row.append(el('button', { text: 'Nama', title: 'Ganti nama', onclick: e => { e.stopPropagation(); const i = el('input', { value: x.name, style: 'width:100%' }); nm.replaceWith(i); i.focus(); i.select(); const done = ok => { if (!i.isConnected) return; if (ok) renameProject(x.id, i.value); draw(); }; i.addEventListener('keydown', ev => { if (ev.key === 'Enter') done(true); if (ev.key === 'Escape') done(false); }); i.addEventListener('blur', () => done(true)); } }),
+        el('button', { text: 'Salin', onclick: e => { e.stopPropagation(); dupProject(x.id); draw(); } }),
+        el('button', { text: '.json', title: 'Unduh cadangan proyek ini', onclick: e => { e.stopPropagation(); try { const o = ACTIVE && x.id === PID ? projectJSON() : { format: 'webengine', version: 1, project: JSON.parse(localStorage.getItem(PK(x.id))) }; dlFile({ name: slugFile(x.name) + '.json', text: JSON.stringify(o, null, 2) }); } catch (er) { toast('Gagal: ' + er.message); } } }), del);
+      body.append(row);
+    });
+    body.append(el('p', { class: 'small', text: `Terpakai sekitar ${(total / 1024).toFixed(1)} KB dari kira-kira 5.000 KB yang disediakan browser. Proyek tersimpan otomatis saat ada perubahan.` }));
+  };
+  const go = id => { hideMgr(); if (ACTIVE && id === PID) return; openProject(id); };
+  if (!rdIdx().length && !ACTIVE) {
+    const c = el('div', { style: 'min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center' }, el('h1', { text: 'Web Engine' }), el('div', { class: 'small', text: 'Belum ada proyek.' }), el('button', { class: 'pri', style: 'font-size:16px;padding:12px 28px', text: '+ Proyek baru', onclick: () => { hideMgr(); createProject(); } }), el('button', { class: 'small', style: 'background:none;border:none;text-decoration:underline;cursor:pointer;color:var(--tx2)', text: 'atau impor file…', onclick: () => importModal() }));
+    pm.innerHTML = ''; pm.append(c); return;
+  }
+  wrapE.append(el('h1', { text: 'Web Engine' }), el('div', { class: 'small', text: 'Proyek kamu (tersimpan di browser ini)' }),
+    el('div', { class: 'acts' }, el('button', { class: 'pri', text: '+ Proyek baru', onclick: () => { hideMgr(); createProject(); } }), el('button', { text: 'Impor file…', onclick: () => importModal() }), el('button', { text: 'Muat contoh', title: 'Buat proyek baru berisi contoh kartu', onclick: () => { hideMgr(); const d = demo(); createProject({ name: 'Contoh kartu', extra: '', bps: d.bps, js: '', root: d.root }); } }), ...(ACTIVE ? [el('button', { text: 'Kembali ke editor', onclick: hideMgr })] : [])), body);
+  pm.innerHTML = ''; pm.append(wrapE); draw();
+}
+const projectModal = showManager;
+$('#projB').addEventListener('click', projectModal);
+$('#saveB').replaceWith($('#saveB').cloneNode(true)); $('#saveB').addEventListener('click', () => save());
+
+const extOf = n => (n.split('.').pop() || '').toLowerCase();
+const IMPORT_TYPES = { html: 'html', htm: 'html', css: 'css', js: 'js', mjs: 'js', json: 'json' };
+function importModal(pre) {
+  let files = [...(pre || [])], mode = 'new';
+  const list = el('div'), modeBox = el('div'), inp = el('input', { type: 'file', multiple: true, accept: '.html,.htm,.css,.js,.mjs,.json', style: 'display:none' });
+  const draw = () => {
+    list.innerHTML = '';
+    files.forEach((f, i) => { const t = IMPORT_TYPES[extOf(f.name)]; list.append(el('div', { class: 'fl' }, el('span', { text: f.name }), el('span', { class: 'small', text: t ? ({ html: 'HTML', css: 'CSS', js: 'JavaScript', json: 'Proyek JSON' })[t] : 'tidak didukung' }), el('button', { text: '✕', onclick: () => { files.splice(i, 1); draw(); } }))); });
+    const nonJson = ACTIVE && files.some(f => IMPORT_TYPES[extOf(f.name)] && IMPORT_TYPES[extOf(f.name)] !== 'json');
+    modeBox.innerHTML = '';
+    if (nonJson) { const r = (v, t) => el('label', { class: 'ck' }, el('input', { type: 'radio', name: 'im', ...(mode === v ? { checked: true } : {}), onchange: () => { mode = v; } }), t); modeBox.append(r('new', 'Jadikan proyek baru (aman, proyek sekarang tidak berubah)'), r('merge', 'Tambahkan ke proyek ini (HTML masuk ke elemen yang sedang dipilih)')); }
+    go.disabled = !files.some(f => IMPORT_TYPES[extOf(f.name)]);
+  };
+  const dz = el('div', { class: 'dz' }, 'Seret file ke sini, atau ', el('button', { text: 'pilih file…', onclick: () => inp.click() }), el('div', { class: 'small', style: 'margin-top:6px', text: 'Mendukung: .html .htm .css .js .json. Boleh beberapa sekaligus (mis. index.html + style.css + script.js).' }));
+  inp.addEventListener('change', () => { files.push(...inp.files); inp.value = ''; draw(); });
+  ['dragenter', 'dragover'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); dz.classList.add('over'); }));
+  dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+  dz.addEventListener('drop', e => { e.preventDefault(); e.stopPropagation(); dz.classList.remove('over'); files.push(...e.dataTransfer.files); draw(); });
+  const go = el('button', { class: 'pri', text: 'Impor', onclick: () => doImport(files.filter(f => IMPORT_TYPES[extOf(f.name)]), mode) });
+  openModal(el('h3', { text: 'Impor file' }), dz, inp, list, modeBox, el('p', { class: 'small', text: '.json = proyek hasil Ekspor Web Engine (selalu dibuka sebagai proyek baru). HTML dan CSS dibaca menjadi daftar elemen dan pengaturan. JavaScript disimpan dan diekspor apa adanya.' }), el('div', { class: 'btns' }, el('button', { text: 'Batal', onclick: closeModal }), go)); draw();
+}
+const escRe = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+async function doImport(files, mode) {
+  if (!ACTIVE) mode = 'new';
+  const rd = []; const notes = []; const problems = [];
+  for (const f of files) { if (f.size > 8 * 1024 * 1024) { problems.push(f.name + ': terlalu besar (maks 8 MB)'); continue; } try { rd.push({ name: f.name, type: IMPORT_TYPES[extOf(f.name)], text: await f.text() }); } catch (e) { problems.push(f.name + ': gagal dibaca'); } }
+  const jsons = rd.filter(x => x.type === 'json'), htmls = rd.filter(x => x.type === 'html'), csss = rd.filter(x => x.type === 'css'), jss = rd.filter(x => x.type === 'js');
+  let opened = null;
+  for (const j of jsons) { try { const p = normalizeProject(JSON.parse(j.text)); createProject(p); opened = p.name; notes.push(`${j.name}: proyek "${p.name}" dibuka sebagai proyek baru`); } catch (e) { problems.push(j.name + ': ' + e.message); } }
+  if (htmls.length || csss.length || jss.length) {
+    if (htmls.length > 1) notes.push('Hanya HTML pertama yang dibaca (' + htmls[0].name + '). Diabaikan: ' + htmls.slice(1).map(x => x.name).join(', '));
+    const d = htmls.length ? parseDoc(htmls[0].text) : null;
+    const cssAll = [d && d.css, ...csss.map(x => x.text)].filter(Boolean).join('\n'), jsAll = [d && d.js, ...jss.map(x => x.text.trim())].filter(Boolean).join('\n\n');
+    let stats = { vis: 0, extra: 0 }, count = 0;
+    if (mode === 'new') {
+      const nm = (d && d.title) || (htmls[0] || csss[0] || jss[0]).name.replace(/\.[^.]+$/, '');
+      createProject({ ...blankProject(nm) });
+      if (d) { P.root.ch = d.nodes; Object.assign(P.root.attrs, d.bodyAttrs); if (d.bodyStyle) Object.assign(P.root.st.base, parseDecls(d.bodyStyle)); ensureIds(); }
+      stats = importCSS(cssAll, true); P.js = jsAll; SEL = P.root.k; walk(P.root, n => { if (n !== P.root) count++; });
+      fullRender(); resetHistory(); save(true);
+    } else {
+      let css2 = cssAll;
+      if (d) {
+        let par = cur(); if (VOID.has(par.tag)) par = parentOf(par);
+        const used = new Set(), map = [];
+        walk({ ch: d.nodes, tag: 'x', id: 'x' }, n => { if (n.tag === '#t' || n.id === 'x') return; const old = n.id, nid = uniqueId(old, null, used); used.add(nid); if (nid !== old) map.push([old, nid]); n.id = nid; count++; });
+        map.forEach(([o, n], i) => { css2 = css2.replace(new RegExp('#' + escRe(o) + '(?![\\w-])', 'g'), '#__M' + i + '__'); });
+        map.forEach(([o, n], i) => { css2 = css2.split('#__M' + i + '__').join('#' + n); });
+        par.ch.push(...d.nodes); par.open = true; if (map.length) notes.push(map.length + ' nama elemen bentrok dan diganti otomatis (mis. ' + map[0][0] + ' → ' + map[0][1] + ')'); notes.push('Properti pada body dari file HTML tidak digabung ke proyek ini.');
+      }
+      stats = importCSS(css2, true); if (jsAll) P.js = (P.js ? P.js + '\n\n' : '') + jsAll;
+      commit('import', { dom: true, tree: true, build: true });
+    }
+    if (d) { notes.push(`${count} elemen terbaca`); if (d.dropped.size) problems.push('Tag tidak didukung dan dilewati: ' + [...d.dropped].join(', ')); if (d.links.length) notes.push('File CSS luar tidak dimuat otomatis: ' + d.links.join(', ') + ' (ikut pilih file CSS-nya saat impor)'); if (d.extScripts.length) notes.push('Script luar tidak dimuat otomatis: ' + d.extScripts.join(', ') + ' (ikut pilih file JS-nya saat impor)'); }
+    if (cssAll) notes.push(`CSS: ${stats.vis} aturan masuk ke Pengaturan, ${stats.extra} aturan (class, tag, dan lainnya) disimpan sebagai kode. Aturan itu tetap tampil di kanvas dan ikut diekspor.`);
+    if (jsAll) notes.push(`JavaScript ${(jsAll.length / 1024).toFixed(1)} KB disimpan apa adanya (belum dijalankan di kanvas)`);
+    opened = opened || P.name;
+  }
+  if (ACTIVE) hideMgr(); else if (rd.some(x => x.type)) {}
+  openModal(el('h3', { text: problems.length && !notes.length ? 'Impor gagal' : 'Hasil impor' }), ...notes.map(t => el('p', { text: '• ' + t })), ...problems.map(t => el('p', { style: 'color:var(--er)', text: '• ' + t })), el('div', { class: 'btns' }, el('button', { class: 'pri', text: 'Tutup', onclick: closeModal })));
+}
+$('#impB').addEventListener('click', () => importModal());
+['dragenter', 'dragover'].forEach(ev => addEventListener(ev, e => { if (e.dataTransfer && [...e.dataTransfer.types].includes('Files')) e.preventDefault(); }));
+addEventListener('drop', e => { if (e.dataTransfer && e.dataTransfer.files.length) { e.preventDefault(); importModal([...e.dataTransfer.files]); } });
+
+/* ===== Tab HP ===== */
+function setM(m) { if (document.body.dataset.m === m && m !== 'canvas') m = 'canvas'; document.body.dataset.m = m; $$('#mtab button').forEach(x => x.classList.toggle('on', x.dataset.m === m)); requestAnimationFrame(() => { renderStyle(); placeOv(); }); if (m === 'code') syncCode(); }
+$$('#mtab button').forEach(x => x.addEventListener('click', () => setM(x.dataset.m)));
+setM('canvas');
+matchMedia('(max-height:560px) and (orientation:landscape),(max-width:600px) and (orientation:portrait)').addEventListener('change', () => { applyLayout(); renderStyle(); placeOv(); });
+
+
+/* ===== Zoom kanvas ===== */
+let ZM = 1;
+let PX = 0, PY = 0;
+function applyXf() { cv.style.transform = `translate(${PX}px, ${PY}px) scale(${ZM})`; cv.style.transformOrigin = 'top center'; }
+function setZoom(z, quiet) {
+  ZM = Math.max(0.25, Math.min(2, Math.round(z * 100) / 100));
+  applyXf();
+  $('#zr').textContent = Math.round(ZM * 100) + '%'; L.zm = ZM; saveL(); if (!quiet) placeOvR();
+}
+$('#zi').addEventListener('click', () => setZoom(ZM * 1.2));
+$('#zo').addEventListener('click', () => setZoom(ZM / 1.2));
+$('#zr').addEventListener('click', () => { PX = 0; PY = 0; setZoom(1); });
+wrap.addEventListener('wheel', e => { if (!(e.ctrlKey || e.metaKey)) return; e.preventDefault(); setZoom(ZM * Math.exp(-e.deltaY * 0.0015)); }, { passive: false });
+setZoom(L.zm || 1, true);
+
+/* ===== Geser kanvas (tahan klik kanan) & menu klik kanan ===== */
+let pan = null, lastPanMove = 0, lastCtx = 0;
+function openCtx(x, y, n) { lastCtx = Date.now(); if (n.k !== SEL) select(n.k); showCanvasMenu(x, y, n); }
+const nodeAt = e => { const t = nidEl(e); return (t && byK(t.dataset.nid)) || P.root; };
+wrap.addEventListener('pointerdown', e => {
+  if (e.button !== 2) return; e.preventDefault();
+  pan = { x: e.clientX, y: e.clientY, px: PX, py: PY, moved: false, n: nodeAt(e), cx: e.clientX, cy: e.clientY };
+  try { wrap.setPointerCapture(e.pointerId); } catch (_) {} wrap.classList.add('panning');
+});
+wrap.addEventListener('pointermove', e => {
+  if (!pan) return; const dx = e.clientX - pan.x, dy = e.clientY - pan.y;
+  if (!pan.moved && Math.abs(dx) + Math.abs(dy) > 4) pan.moved = true;
+  if (pan.moved) { PX = pan.px + dx; PY = pan.py + dy; applyXf(); }
+});
+const endPan = e => {
+  if (!pan) return; const p = pan; pan = null; wrap.classList.remove('panning');
+  if (p.moved) lastPanMove = Date.now(); else if (e.type === 'pointerup') openCtx(p.cx, p.cy, p.n);
+};
+wrap.addEventListener('pointerup', endPan); wrap.addEventListener('pointercancel', endPan);
+wrap.addEventListener('contextmenu', e => {
+  e.preventDefault(); if (preview || pan) return;
+  if (Date.now() - lastPanMove < 500 || Date.now() - lastCtx < 400) return;
+  openCtx(e.clientX, e.clientY, nodeAt(e));
+});
+applyXf();
+
+/* ===== Cari pengaturan (inspector) ===== */
+(() => {
+  const q = $('#isq'), dd = $('#isdd'); let items = [], act = 0;
+  const index = () => { const out = []; $$('#insp details').forEach(d => { const sec = $('summary', d).textContent; $$('.f', d).forEach(f => { const lab = f.querySelector('label'); if (!lab) return; out.push({ t: lab.textContent.trim(), kw: (f.dataset.kw || '') + ' ' + (Object.keys(TD).find(k => TD[k] === sec) || '') + ' ' + (TD[sec] || ''), sec, d, f }); }); }); return out; };
+  const hide = () => { dd.hidden = true; dd.innerHTML = ''; items = []; };
+  const pick = x => { if (!x) return; x.d.open = true; hide(); x.f.scrollIntoView({ block: 'center', behavior: 'smooth' }); x.f.classList.add('hl'); setTimeout(() => x.f.classList.remove('hl'), 1400); };
+  const draw = () => {
+    dd.innerHTML = ''; const s = q.value.trim().toLowerCase();
+    if (!s) return hide();
+    items = index().filter(x => (x.t + ' ' + x.kw + ' ' + x.sec).toLowerCase().includes(s)).slice(0, 10);
+    if (!items.length) dd.append(el('div', { class: 'none', text: 'Tidak ditemukan. Coba kata lain.' }));
+    items.forEach((x, i) => dd.append(el('button', { class: i === act ? 'act' : '', onmousedown: e => { e.preventDefault(); pick(x); }, onmouseenter: () => { act = i; draw(); } }, el('span', { text: x.t || x.kw.split(' ')[0] || x.sec }), el('small', { text: x.sec }))));
+    dd.hidden = false;
+  };
+  q.addEventListener('input', () => { act = 0; draw(); });
+  q.addEventListener('focus', () => { if (q.value.trim()) { act = 0; draw(); } });
+  q.addEventListener('blur', () => setTimeout(hide, 120));
+  q.addEventListener('keydown', e => {
+    if (dd.hidden) { if (e.key === 'Escape') { q.value = ''; q.blur(); } return; }
+    if (e.key === 'ArrowDown') { act = Math.min(items.length - 1, act + 1); draw(); e.preventDefault(); }
+    else if (e.key === 'ArrowUp') { act = Math.max(0, act - 1); draw(); e.preventDefault(); }
+    else if (e.key === 'Enter') { e.preventDefault(); pick(items[act]); }
+    else if (e.key === 'Escape') { q.value = ''; hide(); }
+  });
+})();
+
+/* ===== Menu utama (pojok kiri atas) ===== */
+$('#menuB').addEventListener('click', e => {
+  const r = e.currentTarget.getBoundingClientRect(); closeMenu();
+  const item = (text, fn, hint) => el('button', { onclick: () => { closeMenu(); fn(); } }, el('span', { text }), ...(hint ? [el('small', { style: 'color:var(--tx2);margin-left:14px', text: hint })] : []));
+  menuEl = el('div', { class: 'menu' }, el('div', { class: 'hd', text: 'Proyek: ' + P.name }),
+    item('Simpan', () => save(), 'Ctrl+S'),
+    item('Simpan & keluar ke daftar proyek', () => { save(true); showManager(); }),
+    el('hr', { style: 'border:0;border-top:1px solid var(--bd);margin:4px 0' }),
+    item('Ekspor…', () => $('#expB').click()),
+    item('Impor…', () => importModal()),
+    item('Bantuan', () => $('#helpB').click()));
+  document.body.append(menuEl); const w = menuEl.getBoundingClientRect();
+  menuEl.style.left = Math.max(4, Math.min(r.left, innerWidth - w.width - 6)) + 'px'; menuEl.style.top = (r.bottom + 4) + 'px';
+});
+addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 's' && !pm.classList.contains('on')) { e.preventDefault(); save(); } });
+
+/* ===== Sentuh: 2 jari = geser, cubit = zoom ===== */
+const tps = new Map(); let pinch = null;
+const mid = () => { const v = [...tps.values()]; return { x: (v[0].x + v[1].x) / 2, y: (v[0].y + v[1].y) / 2, d: Math.hypot(v[0].x - v[1].x, v[0].y - v[1].y) }; };
+wrap.addEventListener('pointerdown', e => {
+  if (e.pointerType !== 'touch') return;
+  tps.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (tps.size === 2) { const m = mid(); pinch = { ...m, px: PX, py: PY, z: ZM }; }
+});
+wrap.addEventListener('pointermove', e => {
+  if (e.pointerType !== 'touch' || !tps.has(e.pointerId)) return;
+  tps.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (tps.size !== 2 || !pinch) return;
+  const m = mid(); PX = pinch.px + (m.x - pinch.x); PY = pinch.py + (m.y - pinch.y);
+  if (pinch.d > 10) setZoom(pinch.z * (m.d / pinch.d), true);
+  applyXf();
+});
+const endTouch = e => { if (e.pointerType !== 'touch') return; tps.delete(e.pointerId); if (tps.size < 2) pinch = null; };
+wrap.addEventListener('pointerup', endTouch); wrap.addEventListener('pointercancel', endTouch);
+
+/* ===== Visual script (blok), dijalankan live di kanvas dan ikut diekspor ===== */
+const VM1 = '/* ===== VISUAL: otomatis dari panel Visual (jangan diedit di dalam blok ini) ===== */', VM2 = '/* ===== /VISUAL ===== */';
+const TRIG_L = [['click', 'Saat diklik'], ['load', 'Saat halaman dimuat'], ['timer', 'Berulang tiap (ms)']];
+const STEP_L = [['text', 'Ubah teks'], ['color', 'Ubah warna'], ['show', 'Tampil / sembunyi'], ['set', 'Variabel'], ['if', 'Jika … maka'], ['raw', 'JS mentah']];
+const SET_L = [['isi', 'Isi dengan'], ['tambah', 'Tambah angka']];
+const OPS = ['==', '!=', '<', '>', '<=', '>='];
+function vgRename(oldId, newId) {
+  if (!P.vg || oldId === newId) return;
+  const fix = arr => (arr || []).forEach(s => { if (s.to === oldId) s.to = newId; fix(s.then); fix(s.else); });
+  P.vg.forEach(g => { if (g.el === oldId) g.el = newId; fix(g.steps); });
+}
+const elKeyNow = () => (cur() === P.root ? 'body' : cur().id);
+const idExists = id => id === 'body' || !!(() => { let f = false; walk(P.root, n => { if (n.id === id && n.tag !== '#t') f = true; }); return f; })();
+const J = JSON.stringify;
+const tgtJs = id => id === 'body' ? 'document.body' : `document.getElementById(${J(id)})`;
+const litJs = v => { v = String(v == null ? '' : v); return /^\s*-?\d+(\.\d+)?\s*$/.test(v) ? Number(v) : J(v); };
+function genSteps(arr, p) { return (arr || []).map(s => genStep(s, p)).join('\n'); }
+function genStep(s, p) {
+  const T = tgtJs(s.to || 'body');
+  switch (s.k) {
+    case 'text': return `${p}{ var __t = ${T}; if (__t) __t.textContent = ${J(s.v || '')}; }`;
+    case 'color': return `${p}{ var __t = ${T}; if (__t) __t.style.setProperty(${J(s.p || 'background-color')}, ${J(s.v || '#000000')}); }`;
+    case 'show': return `${p}{ var __t = ${T}; if (__t) __t.style.display = ${s.on ? '""' : '"none"'}; }`;
+    case 'set': return s.op === 'tambah' ? `${p}__vars[${J(s.n || '')}] = (Number(__vars[${J(s.n || '')}]) || 0) + Number(${litJs(s.v)});` : `${p}__vars[${J(s.n || '')}] = ${litJs(s.v)};`;
+    case 'if': return `${p}if (__vars[${J(s.n || '')}] ${OPS.includes(s.op) ? s.op : '=='} ${litJs(s.v)}) {\n${genSteps(s.then, p + '  ')}\n${p}} else {\n${genSteps(s.else, p + '  ')}\n${p}}`;
+    case 'raw': return s.c ? s.c.split('\n').map(l => p + l).join('\n') : '';
+  }
+  return '';
+}
+function genGraph(g) {
+  const body = genSteps(g.steps, '    '), head = `// ${TRIG_L.find(t => t[0] === g.trig.t)[1]} · ${g.el}`;
+  if (g.trig.t === 'load') return `${head}\n(function () {\n${body}\n})();`;
+  if (g.trig.t === 'timer') return `${head}\nsetInterval(function () {\n${body}\n}, ${Math.max(50, g.trig.ms || 1000)});`;
+  return `${head}\n(function () {\n  var __el = ${tgtJs(g.el)};\n  if (__el) __el.addEventListener("click", function () {\n${body}\n  });\n})();`;
+}
+function writeGen() {
+  const gs = (P.vg || []).filter(g => idExists(g.el));
+  const blk = gs.length ? `${VM1}\nvar __vars = {};\n${gs.map(genGraph).join('\n\n')}\n${VM2}` : '';
+  const js = P.js || '', i = js.indexOf(VM1), j = js.indexOf(VM2);
+  if (i >= 0 && j > i) P.js = js.slice(0, i) + blk + js.slice(j + VM2.length);
+  else if (blk) P.js = (js.trimEnd() ? js.trimEnd() + '\n\n' : '') + blk + '\n';
+}
+/* jalankan JS di kanvas: 'document' diganti versi yang menunjuk ke isi kanvas */
+let liveTimers = [], liveT = null;
+function runLive() {
+  liveTimers.forEach(t => { clearInterval(t); clearTimeout(t); }); liveTimers = [];
+  const shadow = host.shadowRoot; if (!shadow) return;
+  const doc = new Proxy(document, { get(t, k) {
+    if (k === 'getElementById') return id => shadow.querySelector('#' + CSS.escape(String(id)));
+    if (k === 'querySelector' || k === 'querySelectorAll') return s => shadow[k](s);
+    if (k === 'body') return shadow.querySelector('.page');
+    if (k === 'addEventListener' || k === 'removeEventListener') return () => {};
+    const v = t[k]; return typeof v === 'function' ? v.bind(t) : v;
+  } });
+  const si = (f, ms) => { const id = setInterval(f, ms); liveTimers.push(id); return id; };
+  const st = (f, ms) => { const id = setTimeout(f, ms); liveTimers.push(id); return id; };
+  try { new Function('document', 'setInterval', 'setTimeout', P.js || '')(doc, si, st); status('#stJ', 'berjalan di kanvas', 'ok'); }
+  catch (e) { status('#stJ', 'error: ' + e.message, 'err'); }
+}
+function runLiveSoon() { clearTimeout(liveT); liveT = setTimeout(runLive, 120); }
+const _rd = renderDom; renderDom = function () { _rd(); runLiveSoon(); };
+
+/* ----- panel Visual ----- */
+function vsync(rebuild) { if (rebuild) pushHist('visual'); writeGen(); syncCode(); runLiveSoon(); autosave(); if (rebuild) drawVis(true); }
+const selEl = (opts, val, onch, cls) => { const s = el('select', { class: cls || '' }, ...opts.map(([v, t]) => el('option', { value: v, text: t }))); s.value = val; s.addEventListener('change', () => onch(s.value)); return s; };
+const inEl = (val, onch, w) => { const i = el('input', { type: 'text', value: val == null ? '' : String(val), style: w ? `width:${w}` : '' }); i.addEventListener('change', () => onch(i.value)); i.addEventListener('input', () => onch(i.value, true)); return i; };
+function newStep(k, id) {
+  return ({ text: { k, to: id, v: 'Teks baru' }, color: { k, to: id, p: 'background-color', v: '#ff0000' }, show: { k, to: id, on: false }, set: { k, n: 'skor', op: 'isi', v: '0' }, if: { k, n: 'skor', op: '==', v: '0', then: [], else: [] }, raw: { k, c: '// kode JS' } })[k];
+}
+function targetOpts() { const out = [['body', 'halaman (body)']]; walk(P.root, n => { if (n !== P.root && n.tag !== '#t') out.push([n.id, n.id]); }); return out; }
+function stepsEditor(arr, ctx, depth) {
+  const box = el('div', { class: depth ? 'vst' : '' });
+  arr.forEach((s, i) => {
+    const row = el('div', { class: 'vrow' });
+    const mv = (d) => { const j = i + d; if (j < 0 || j >= arr.length) return; [arr[i], arr[j]] = [arr[j], arr[i]]; vsync(true); };
+    row.append(el('span', { class: 'tt', text: (STEP_L.find(x => x[0] === s.k) || [0, s.k])[1] }));
+    const tops = targetOpts();
+    if (['text', 'color', 'show'].includes(s.k)) row.append(selEl(tops, s.to || 'body', v => { s.to = v; vsync(false); }));
+    if (s.k === 'text') row.append(inEl(s.v, (v) => { s.v = v; vsync(false); }, '150px'));
+    if (s.k === 'color') { row.append(selEl([['background-color', 'latar'], ['color', 'teks'], ['border-color', 'garis tepi']], s.p || 'background-color', v => { s.p = v; vsync(false); })); const c = el('input', { type: 'color', value: /^#[0-9a-f]{6}$/i.test(s.v) ? s.v : '#ff0000' }); c.addEventListener('input', () => { s.v = c.value; vsync(false); }); row.append(c); }
+    if (s.k === 'show') row.append(selEl([['1', 'tampilkan'], ['0', 'sembunyikan']], s.on ? '1' : '0', v => { s.on = v === '1'; vsync(false); }));
+    if (s.k === 'set') { row.append(inEl(s.n, v => { s.n = v; vsync(false); }, '80px'), selEl(SET_L, s.op || 'isi', v => { s.op = v; vsync(false); }), inEl(s.v, v => { s.v = v; vsync(false); }, '70px')); }
+    if (s.k === 'if') { row.append(inEl(s.n, v => { s.n = v; vsync(false); }, '70px'), selEl(OPS.map(o => [o, o]), s.op || '==', v => { s.op = v; vsync(false); }), inEl(s.v, v => { s.v = v; vsync(false); }, '70px')); }
+    if (s.k === 'raw') { const t = el('textarea', { rows: 3, style: 'width:100%;font-family:var(--mono)' }); t.value = s.c || ''; t.addEventListener('input', () => { s.c = t.value; vsync(false); }); row.append(t); }
+    row.append(el('div', { class: 'vr' }, el('button', { text: '↑', onclick: () => mv(-1) }), el('button', { text: '↓', onclick: () => mv(1) }), el('button', { text: '✕', title: 'Hapus langkah', onclick: () => { arr.splice(i, 1); vsync(true); } })));
+    if (s.k === 'if') { row.append(el('div', { class: 'vb', text: 'Maka:' }), stepsEditor(s.then, ctx, depth + 1), el('div', { class: 'vb', text: 'Jika tidak:' }), stepsEditor(s.else, ctx, depth + 1)); }
+    box.append(row);
+  });
+  box.append(selEl([['', '+ tambah langkah…'], ...STEP_L], '', v => { if (!v) return; arr.push(newStep(v, ctx)); vsync(true); }));
+  return box;
+}
+let vsSig = null;
+function drawVis(force) {
+  const id = elKeyNow(), sig = id + '|' + JSON.stringify((P.vg || []).filter(g => g.el === id));
+  if (!force && sig === vsSig) return; vsSig = sig;
+  const vis = $('#vis'); vis.innerHTML = '';
+  const dname = id === 'body' ? 'halaman (body)' : id;
+  vis.append(el('div', { class: 'vhd', text: 'Script untuk: ' + dname + ' · hanya yang dipilih yang tampil' }));
+  (P.vg || []).filter(g => g.el === id).forEach(g => {
+    const card = el('div', { class: 'vcard' });
+    const trig = selEl(TRIG_L, g.trig.t, v => { g.trig.t = v; vsync(true); });
+    const ms = el('input', { type: 'number', min: 50, value: g.trig.ms || 1000, style: 'width:80px', onchange: e => { g.trig.ms = Math.max(50, +e.target.value || 1000); vsync(false); } });
+    card.append(el('div', { class: 'vr' }, el('b', { text: 'Saat ' }), trig, ...(g.trig.t === 'timer' ? [ms] : []), el('span', { style: 'flex:1' }), el('button', { text: 'Hapus script', onclick: () => { P.vg = P.vg.filter(x => x !== g); vsync(true); } })));
+    card.append(stepsEditor(g.steps, id, 0));
+    vis.append(card);
+  });
+  vis.append(el('button', { class: 'pri', text: '+ Script visual baru untuk ' + dname, onclick: () => { P.vg.push({ id: 'g' + Date.now().toString(36), el: id, trig: { t: 'click', ms: 1000 }, steps: [] }); vsync(true); } }));
+  if (!(P.vg || []).some(g => g.el === id)) vis.append(el('div', { class: 'small', style: 'margin-top:8px', text: 'Belum ada script untuk elemen ini. Pilih elemen lain di daftar untuk melihat script-nya.' }));
+  $('#stV').textContent = 'JS dibuat otomatis di panel JS';
+}
+let BPROW = null;
+/* ===== Inspector ===== */
+const TD = { 'Dasar': 'Element', 'Susunan': 'Layout', 'Penempatan': 'Position', 'Ukuran': 'Size', 'Ruang': 'Spacing', 'Latar belakang': 'Background', 'Garis tepi dan sudut': 'Border & radius', 'Judul di garis tepi': 'Legend (fieldset)', 'Bayangan': 'Shadow', 'Teks': 'Typography', 'Efek dan gerak': 'Effects & motion',
+  'Jenis': 'tag', 'Nama': 'id', 'Isi teks': 'text', 'Tujuan tautan': 'href', 'Alamat gambar': 'src', 'Teks pengganti': 'alt', 'Teks petunjuk': 'placeholder', 'Jenis isian': 'type', 'Keterangan kursor': 'title',
+  'Menyusun isi di dalamnya': 'Flex / grid container', 'Petak (kolom dan baris)': 'Grid container', 'Aturan elemen ini di dalam induknya': 'Flex / grid item', 'Per sisi (opsional, menimpa pengaturan di atas)': 'Per-side border', 'Garis luar (di luar tepi, tidak menambah ukuran)': 'Outline', 'Bentuk potongan': 'clip-path', 'Bayangan kotak': 'box-shadow', 'Bayangan teks': 'text-shadow', 'Ubah bentuk': 'transform', 'Efek warna dan kabur': 'filter', 'Efek kaca (memburamkan yang di belakang)': 'backdrop-filter', 'Lainnya': 'Other', 'Perubahan halus saat kondisi berubah': 'transition', 'Animasi berulang': 'animation',
+  '…antar baris saja': 'row-gap', '…antar kolom saja': 'column-gap', 'Kepekatan': 'opacity', 'Geser mendatar': 'translateX', 'Geser tegak': 'translateY', 'Putar (°)': 'rotate', 'Perbesar lebar': 'scaleX', 'Perbesar tinggi': 'scaleY', 'Miring mendatar': 'skewX', 'Miring tegak': 'skewY',
+  'Kabur (px)': 'blur', 'Kecerahan %': 'brightness', 'Kontras %': 'contrast', 'Hitam-putih %': 'grayscale', 'Kepekatan warna %': 'saturate', 'Putar warna (°)': 'hue-rotate', 'Negatif %': 'invert', 'Cokelat tua %': 'sepia',
+  'Yang berubah halus': 'transition-property', 'Lama (detik)': 'transition-duration', 'Gaya gerak': 'transition-timing-function', 'Tunda (detik)': 'transition-delay', 'Animasi': 'animation-name', 'Lama satu putaran (detik)': 'animation-duration', 'Diulang': 'animation-iteration-count',
+  'Tulisan judul': '<legend> text', 'Posisi judul': 'legend align', 'Jarak dari sisi': 'legend margin', 'Ruang kiri tulisan': 'padding-left', 'Ruang kanan tulisan': 'padding-right' };
+let FIELDS = [];
+const lgMap = () => cur().lg || (cur().lg = {});
+const curSt = () => stMap(cur(), state, MQ);
+const getP = (p, lg) => (lg ? lgMap() : curSt())[p];
+function setP(prop, val, key, lg) { const S = lg ? lgMap() : curSt(); if (val === '' || val == null) delete S[prop]; else S[prop] = val; commit(key || prop); }
+function E(prop) { const n = cur(), s = curSt()[prop]; if (s != null) return s; const b = inherited(prop); if (b) return b; const e = liveEl(n); return e ? getComputedStyle(e).getPropertyValue(prop) : ''; }
+function parentDisplay() { const p = parentOf(cur()), e = p && liveEl(p); return e ? getComputedStyle(e).display : ''; }
+const isFlex = v => /flex/.test(v), isGrid = v => /grid/.test(v);
+const R = {
+  flexC: () => isFlex(E('display')) ? '' : H('Butuh "Cara tampil: Susun otomatis"', 'Butuh display: flex'),
+  gridC: () => isGrid(E('display')) ? '' : H('Butuh "Cara tampil: Petak"', 'Butuh display: grid'),
+  fgC: () => /flex|grid/.test(E('display')) ? '' : H('Butuh "Cara tampil: Susun otomatis" atau "Petak"', 'Butuh display: flex atau grid'),
+  flexI: () => isFlex(parentDisplay()) ? '' : H('Hanya berlaku jika induknya memakai "Susun otomatis"', 'Hanya jika parent memakai display: flex'),
+  fgI: () => /flex|grid/.test(parentDisplay()) ? '' : H('Hanya berlaku jika induknya memakai "Susun otomatis" atau "Petak"', 'Hanya jika parent memakai display: flex atau grid'),
+  gridI: () => isGrid(parentDisplay()) ? '' : H('Hanya berlaku jika induknya memakai "Petak"', 'Hanya jika parent memakai display: grid'),
+  pos: () => E('position') !== 'static' ? '' : H('Butuh "Cara menempatkan" selain "Mengikuti alur"', 'Butuh position selain static'),
+  z: () => (E('position') !== 'static' || /flex|grid/.test(parentDisplay())) ? '' : H('Butuh "Cara menempatkan" selain "Mengikuti alur"', 'Butuh position selain static'),
+  inl: () => (E('display') === 'inline' && !/^(img|input)$/.test(cur().tag)) ? H('Tidak berlaku untuk tampilan "Menyatu dengan teks"', 'Tidak berlaku untuk display: inline') : '',
+  inlT: () => (E('display') === 'inline' && !/^(img|input)$/.test(cur().tag)) ? H('Tidak berlaku untuk tampilan "Menyatu dengan teks"', 'Tidak berlaku untuk display: inline') : '',
+  bdr: p => () => { const s = E(p + '-style'); const any = p === 'border' && SIDES.some(x => { const v = E('border-' + x + '-style'); return v && v !== 'none' && v !== 'hidden'; }); return (any || (s && s !== 'none' && s !== 'hidden')) ? '' : H('Pilih gaya garis dulu (bukan "Tanpa")', 'Pilih style selain none dulu'); },
+  txt: () => { const n = cur(); return (!n.text && !n.ch.length && !n.legend && !/^(input|textarea|button)$/.test(n.tag)) ? 'Tidak ada teks di elemen ini' : ''; },
+  noTxt: () => /^(img|hr|br)$/.test(cur().tag) ? 'Elemen ini tidak menampilkan teks' : ''
+};
+function fld(label, ctl, o = {}, host) {
+  const th = ctl.prop || TD[label] || label; const r = el('div', { class: 'f' + (o.nolab ? ' nolab' : '') }, el('label', { text: TECH ? th : label }), el('div', { class: 'c' }, ctl.el));
+  const lab = r.firstChild; if (o.title) lab.title = o.title;
+  r.dataset.kw = [label, ctl.prop || '', TD[label] || ''].join(' ');
+  const f = { upd() { let why = ''; const n = cur();
+    if (o.always) why = o.dis ? o.dis() : '';
+    else if (o.base && (state !== 'base' || MQ)) why = MQ ? H('Hanya di "Semua ukuran"', 'Hanya di tampilan Semua ukuran') : H('Hanya di kondisi Normal', 'Hanya di state Normal');
+    else if (o.noRoot && n === P.root) why = H('Tidak berlaku untuk halaman', 'Tidak berlaku untuk body');
+    else if (!o.keepNone && E('display') === 'none') why = H('Elemen sedang disembunyikan (Cara tampil: Sembunyikan)', 'Elemen disembunyikan (display: none)');
+    else if (o.dis) why = o.dis();
+    r.classList.toggle('dis', !!why); r.title = why; $$('input,select,textarea,button', r).forEach(x => x.tabIndex = why ? -1 : 0); ctl.upd && ctl.upd(); } };
+  FIELDS.push(f);
+  if (ctl.scrub) lab.addEventListener('pointerdown', e => { if (r.classList.contains('dis')) return; e.preventDefault(); cap(e, lab); const x0 = e.clientX, st = ctl.scrub.start(); document.body.classList.add('dragging'); const mv = rafT(ev => ctl.scrub.move(st, (ev.clientX - x0) * (ev.shiftKey ? 5 : 1))); const on = ev => mv(ev); const up = () => { lab.removeEventListener('pointermove', on); lab.removeEventListener('pointerup', up); lab.removeEventListener('pointercancel', up); document.body.classList.remove('dragging'); }; lab.addEventListener('pointermove', on); lab.addEventListener('pointerup', up); lab.addEventListener('pointercancel', up); });
+  (host || curSec).append(r); return r;
+}
+let curSec = null;
+const sub = t => curSec.append(el('div', { class: 'sub', text: TECH ? (TD[t] || t) : t }));
+const OPT = (arr, ph = 'bawaan') => [el('option', { value: '', text: ph }), ...arr.map(a => Array.isArray(a) ? el('option', { value: a[0], text: a[1] }) : el('option', { value: a, text: a }))];
+
+/* -- controls -- */
+function lenCtl(prop, o = {}) {
+  const inp = el('input', { type: 'text', spellcheck: 'false', placeholder: o.ph || 'bawaan' });
+  const norm = v => (/^-?(\d+\.?\d*|\.\d+)$/.test(v) && !o.unitless) ? v + 'px' : v;
+  const lg = !!o.lg; const apply = () => { let v = inp.value.trim(); if (v === '') { inp.classList.remove('bad'); setP(prop, '', undefined, lg); return; } v = norm(v); let ok = false; try { ok = CSS.supports(prop, v); } catch (_) {} if (!ok) { inp.classList.add('bad'); return; } inp.classList.remove('bad'); setP(prop, v, undefined, lg); };
+  inp.addEventListener('input', apply);
+  inp.addEventListener('keydown', e => { if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return; e.preventDefault(); const m = String(inp.value || getP(prop, lg) || '').match(/^(-?[\d.]+)([a-z%]*)$/i); const n0 = m ? +m[1] : 0, u = m ? m[2] : (o.unitless ? '' : 'px'); const st = (o.step || 1) * (e.shiftKey ? 10 : 1); inp.value = rnd(n0 + (e.key === 'ArrowUp' ? st : -st), 3) + u; apply(); });
+  return { prop, el: inp, upd() { if (document.activeElement !== inp) { inp.value = getP(prop, lg) || ''; inp.classList.remove('bad'); } inp.placeholder = (!lg && inherited(prop)) || o.ph || 'bawaan'; },
+    scrub: { start: () => { const m = String(getP(prop, lg) || '').match(/^(-?[\d.]+)([a-z%]*)$/i); return { n: m ? +m[1] : 0, u: m ? m[2] : (o.unitless ? '' : 'px') }; }, move: (s, dx) => { const v = rnd(s.n + dx * (o.step || 1), 3) + s.u; inp.value = v; setP(prop, v, undefined, lg); } } };
+}
+function txtCtl(prop, o = {}) {
+  const inp = el('input', { type: 'text', spellcheck: 'false', placeholder: o.ph || 'bawaan' });
+  if (o.list) { const id = 'dl-' + prop; inp.setAttribute('list', id); if (!document.getElementById(id)) document.body.append(el('datalist', { id }, o.list.map(v => el('option', { value: v })))); }
+  inp.addEventListener('input', () => { const v = inp.value.trim(); if (v && o.check) { let ok = false; try { ok = CSS.supports(prop, v); } catch (_) {} if (!ok) { inp.classList.add('bad'); return; } } inp.classList.remove('bad'); setP(prop, v); });
+  return { prop, el: inp, upd() { if (document.activeElement !== inp) inp.value = getP(prop) || ''; inp.placeholder = inherited(prop) || o.ph || 'bawaan'; } };
+}
+function selCtl(prop, arr, o = {}) {
+  const s = el('select'); s.append(...OPT(arr, o.ph));
+  const lg = !!o.lg; s.addEventListener('change', () => setP(prop, s.value, undefined, lg));
+  return { prop, el: s, upd() { const v = getP(prop, lg) || ''; if (v && ![...s.options].some(x => x.value === v)) s.append(el('option', { value: v, text: v })); s.value = v; } };
+}
+function segCtl(prop, arr) {
+  const box = el('div', { class: 'seg' }); const bs = arr.map(a => { const [v, t] = Array.isArray(a) ? a : [a, a]; const b = el('button', { text: t, title: v, 'data-v': v, onclick: () => setP(prop, getP(prop) === v ? '' : v) }); box.append(b); return b; });
+  return { prop, el: box, upd() { const v = getP(prop); bs.forEach(b => b.classList.toggle('on', b.dataset.v === v)); } };
+}
+function colorBox(get, set, o = {}) {
+  const sw = el('input', { type: 'color' }), tx = el('input', { type: 'text', spellcheck: 'false', placeholder: o.ph || 'bawaan' }), al = el('input', { type: 'range', min: 0, max: 1, step: .01, title: 'Transparansi', style: 'max-width:46px;flex:none!important' });
+  sw.addEventListener('input', () => set(withHex(get() || '', sw.value)));
+  al.addEventListener('input', () => { const c = get() || '#000000', hx = colorHex(c), r = parseInt(hx.slice(1, 3), 16), g = parseInt(hx.slice(3, 5), 16), b = parseInt(hx.slice(5, 7), 16); set(+al.value >= 1 ? hx : `rgba(${r}, ${g}, ${b}, ${al.value})`); });
+  tx.addEventListener('input', () => { const v = tx.value.trim(); if (v === '') { tx.classList.remove('bad'); set(''); } else if (isColor(v)) { tx.classList.remove('bad'); set(v); } else tx.classList.add('bad'); });
+  return { el: el('div', { class: 'c', style: 'display:contents' }, sw, tx, al), upd() { const v = get() || ''; if (document.activeElement !== tx) tx.value = v; sw.value = colorHex(v); al.value = colorAlpha(v); } };
+}
+const colCtl = (prop, o = {}) => { const lg = !!o.lg; const c = colorBox(() => getP(prop, lg), v => setP(prop, v, undefined, lg)); const u = c.upd; c.prop = prop; c.upd = () => { u(); const b = (!lg && inherited(prop)) || ''; c.el.children[1].placeholder = b || 'bawaan'; }; return c; };
+function sidesCtl(names, labels, prop) {
+  const cs = names.map((n, i) => lenCtl(n, { ph: labels[i] })); const box = el('div', { class: 'sides' }, ...cs.map(c => c.el));
+  const eq = el('button', { text: '=', title: 'Samakan semua sisi dengan nilai pertama yang terisi', onclick: () => { const v = names.map(n => getP(n)).find(Boolean); if (!v) return; names.forEach(n => curSt()[n] = v); commit(prop); } });
+  return { prop: ({ margin: 'margin', padding: 'padding', radius: 'border-radius', bs: 'border-*-style', bw: 'border-*-width', bc: 'border-*-color' })[prop], el: el('div', { class: 'c', style: 'display:contents' }, box, eq), upd() { cs.forEach(c => c.upd()); }, scrub: cs[0].scrub && { start: () => names.map((n, i) => cs[i].scrub.start()), move: (st, dx) => names.forEach((n, i) => { const v = rnd(st[i].n + dx, 3) + st[i].u; curSt()[n] = v; cs[i].el.value = v; commit(prop); }) } };
+}
+function mrow(label, M, W, key, min, max, step, o = {}) {
+  const r = el('input', { type: 'range', min, max, step }), n = el('input', { type: 'number', min, max, step, style: 'width:62px;flex:none!important' });
+  const set = v => { const m = M(); m[key] = v; W(m); };
+  r.addEventListener('input', () => set(+r.value)); n.addEventListener('input', () => { if (n.value !== '') set(+n.value); });
+  return fld(label, { el: el('div', { class: 'c', style: 'display:contents' }, r, n), upd() { const v = M()[key]; r.value = v; if (document.activeElement !== n) n.value = rnd(v, 3); } }, o);
+}
+
+/* -- composite: shadow -- */
+function parseShadow(v) { if (!v || v === 'none') return []; return splitTop(v, ',').map(it => { const tk = splitTop(it, ' '), inset = tk.includes('inset'), ns = tk.filter(t => /^-?[\d.]+(px)?$/.test(t)).map(parseFloat), col = tk.filter(t => t !== 'inset' && !/^-?[\d.]+(px)?$/.test(t)).join(' ') || '#000000'; return { inset, x: ns[0] || 0, y: ns[1] || 0, b: ns[2] || 0, s: ns[3] || 0, c: col }; }); }
+const serShadow = (a, sp) => a.map(i => `${i.inset ? 'inset ' : ''}${i.x}px ${i.y}px ${i.b}px ${sp ? i.s + 'px ' : ''}${i.c}`.trim()).join(', ');
+function shadowCtl(prop, o = {}) {
+  const box = el('div', { style: 'grid-column:1/-1' });
+  const read = () => parseShadow(getP(prop)), write = a => setP(prop, a.length ? serShadow(a, o.spread) : '');
+  const draw = () => {
+    box.innerHTML = ''; const items = read();
+    items.forEach((it, i) => {
+      const mk = (lab, key, step = 1) => { const inp = el('input', { type: 'number', step, value: it[key] }); inp.addEventListener('input', () => { const a = read(); a[i][key] = +inp.value || 0; write(a); }); return el('div', {}, el('label', { text: lab }), inp); };
+      const cb = colorBox(() => read()[i] && read()[i].c, v => { const a = read(); a[i].c = v || '#000000'; write(a); }); cb.upd();
+      const top = el('div', { class: 'top' }, ...(o.inset ? [el('label', { class: 'small' }, el('input', { type: 'checkbox', ...(it.inset ? { checked: true } : {}), onchange: e => { const a = read(); a[i].inset = e.target.checked; write(a); } }), H(' di dalam', ' inset'))] : []), cb.el, el('button', { text: '✕', title: 'Hapus', onclick: () => { const a = read(); a.splice(i, 1); write(a); draw(); } }));
+      box.append(el('div', { class: 'item' }, top, el('div', { class: 'g' }, mk(H('Geser →', 'X'), 'x'), mk(H('Geser ↓', 'Y'), 'y'), mk(H('Kabur', 'Blur'), 'b'), ...(o.spread ? [mk(H('Melebar', 'Spread'), 's')] : []))));
+    });
+    box.append(el('button', { text: H('+ Tambah bayangan', '+ Add shadow'), onclick: () => { const a = read(); a.push({ inset: false, x: 0, y: 4, b: 12, s: 0, c: 'rgba(0, 0, 0, 0.3)' }); write(a); draw(); } }));
+  };
+  return { el: box, upd() { if (!box.contains(document.activeElement)) draw(); } };
+}
+
+/* -- composite: gradient / background -- */
+function parseGrad(v) {
+  const m = v.match(/^(repeating-)?(linear|radial|conic)-gradient\(([\s\S]*)\)$/); if (!m) return null;
+  const args = splitTop(m[3], ','), g = { type: m[2], angle: m[2] === 'linear' ? 180 : 0, shape: 'circle', stops: [] };
+  const f = args[0] || '';
+  if (!isColor(f.split(/\s+/)[0]) || /^(to|from|circle|ellipse|at|closest|farthest)\b|^-?[\d.]+(deg|turn|rad)/.test(f)) {
+    args.shift();
+    if (m[2] === 'radial') g.shape = /ellipse/.test(f) ? 'ellipse' : 'circle';
+    else { const t = f.match(/(-?[\d.]+)(deg|turn|rad)?/); if (/to\s/.test(f)) { const d = { top: 0, right: 90, bottom: 180, left: 270 }; g.angle = d[f.replace('to', '').trim().split(/\s+/)[0]] ?? 180; } else if (t) g.angle = t[2] === 'turn' ? t[1] * 360 : t[2] === 'rad' ? t[1] * 180 / Math.PI : +t[1]; }
+  }
+  args.forEach((a, i) => { const tk = splitTop(a, ' '); let p = null; const last = tk[tk.length - 1]; if (tk.length > 1 && /^-?[\d.]+%$/.test(last)) { p = parseFloat(last); tk.pop(); } g.stops.push({ c: tk.join(' '), p: p == null ? (i * 100 / Math.max(1, args.length - 1)) : p }); });
+  return g.stops.length >= 2 ? g : null;
+}
+const serGrad = g => { const st = g.stops.map(s => `${s.c} ${rnd(s.p, 1)}%`).join(', '); return g.type === 'linear' ? `linear-gradient(${g.angle}deg, ${st})` : g.type === 'radial' ? `radial-gradient(${g.shape}, ${st})` : `conic-gradient(from ${g.angle}deg, ${st})`; };
+const bgForce = {};
+function bgCtl() {
+  const box = el('div', { style: 'grid-column:1/-1' });
+  const S = () => curSt();
+  const modeOf = () => { const s = S(), img = s['background-image'] || ''; if (s.background) return 'custom'; if (/gradient/.test(img)) return 'grad'; if (/url\(/.test(img)) return 'img'; if (s['background-color']) return 'solid'; return bgForce[cur().k + state] || 'none'; };
+  const setMode = m => { const s = S(); bgForce[cur().k + state] = m; delete s.background; if (m === 'none') { delete s['background-color']; delete s['background-image']; } else if (m === 'solid') { delete s['background-image']; if (!s['background-color']) s['background-color'] = '#ffffff'; } else if (m === 'grad') { delete s['background-color']; s['background-image'] = serGrad({ type: 'linear', angle: 135, stops: [{ c: '#4f8cff', p: 0 }, { c: '#9b5cff', p: 100 }] }); } else if (m === 'img') { delete s['background-color']; delete s['background-image']; } commit('bg-mode'); draw(); };
+  const gread = () => parseGrad(S()['background-image'] || '') || { type: 'linear', angle: 180, shape: 'circle', stops: [{ c: '#ffffff', p: 0 }, { c: '#000000', p: 100 }] };
+  const gwrite = g => setP('background-image', serGrad(g));
+  let mine = [];
+  const draw = () => {
+    FIELDS = FIELDS.filter(f => !mine.includes(f)); mine = [];
+    box.innerHTML = ''; const m = modeOf();
+    const modes = [['none', H('Tanpa', 'None')], ['solid', H('Warna', 'Solid')], ['grad', H('Gradasi', 'Gradient')], ['img', H('Gambar', 'Image')]];
+    box.append(el('div', { class: 'seg', style: 'margin:2px 0 6px' }, ...modes.map(([v, t]) => el('button', { class: m === v ? 'on' : '', text: t, onclick: () => setMode(v) }))));
+    if (m === 'none') { const q = colorBox(() => undefined, v => { if (modeOf() === 'none') { setMode('solid'); setP('background-color', v); draw(); } else setP('background-color', v); }); q.upd(); box.append(el('div', { class: 'f nolab', style: 'grid-template-columns:1fr' }, el('div', { class: 'c' }, q.el), el('div', { class: 'small', style: 'color:var(--tx2);margin-top:2px', text: 'Pilih warna untuk langsung memberi latar. Atau pilih Warna di atas.' }))); }
+    if (m === 'solid') { const c = colorBox(() => S()['background-color'], v => setP('background-color', v)); c.upd(); box.append(el('div', { class: 'f nolab', style: 'grid-template-columns:1fr' }, el('div', { class: 'c' }, c.el))); }
+    else if (m === 'grad') {
+      const g = gread();
+      box.append(el('div', { style: `height:22px;border-radius:5px;border:1px solid var(--bd);background:${serGrad({ ...g, type: 'linear', angle: 90 })}` }));
+      box.append(el('div', { class: 'seg', style: 'margin:6px 0' }, ...['linear', 'radial', 'conic'].map(t => el('button', { class: g.type === t ? 'on' : '', text: { linear: H('Lurus', 'Linear'), radial: H('Lingkaran', 'Radial'), conic: H('Putar', 'Conic') }[t], onclick: () => { const x = gread(); x.type = t; gwrite(x); draw(); } }))));
+      if (g.type === 'radial') box.append(el('div', { class: 'seg', style: 'margin-bottom:6px' }, ...['circle', 'ellipse'].map(t => el('button', { class: g.shape === t ? 'on' : '', text: t === 'circle' ? H('Lingkaran', 'circle') : H('Elips', 'ellipse'), onclick: () => { const x = gread(); x.shape = t; gwrite(x); draw(); } }))));
+      else { const r = el('input', { type: 'range', min: 0, max: 360, value: g.angle }), n = el('input', { type: 'number', value: rnd(g.angle, 1), style: 'width:62px;flex:none!important' }); const set = v => { const x = gread(); x.angle = v; gwrite(x); }; r.addEventListener('input', () => { n.value = r.value; set(+r.value); }); n.addEventListener('input', () => { r.value = n.value; set(+n.value || 0); }); box.append(el('div', { class: 'f' }, el('label', { text: H('Arah (°)', 'Angle (°)') }), el('div', { class: 'c' }, r, n))); }
+      g.stops.forEach((s, i) => {
+        const cb = colorBox(() => (gread().stops[i] || {}).c, v => { const x = gread(); x.stops[i].c = v || '#000000'; gwrite(x); }); cb.upd();
+        const pn = el('input', { type: 'number', min: 0, max: 100, value: rnd(s.p, 1), title: 'Posisi %', style: 'width:56px;flex:none!important' }); pn.addEventListener('input', () => { const x = gread(); x.stops[i].p = +pn.value || 0; gwrite(x); });
+        box.append(el('div', { class: 'item' }, el('div', { class: 'top' }, cb.el, pn, el('span', { class: 'small', text: '%' }), el('button', { text: '✕', title: 'Hapus warna ini', onclick: () => { const x = gread(); if (x.stops.length <= 2) return toast('Gradasi minimal 2 warna'); x.stops.splice(i, 1); gwrite(x); draw(); } }))));
+      });
+      box.append(el('div', { style: 'display:flex;gap:6px' }, el('button', { text: H('+ Warna', '+ Color stop'), onclick: () => { const x = gread(); x.stops.push({ c: '#ffffff', p: 100 }); gwrite(x); draw(); } }), el('button', { text: H('Balik urutan', 'Reverse'), onclick: () => { const x = gread(); x.stops.reverse().forEach(s => s.p = 100 - s.p); gwrite(x); draw(); } })));
+    }
+    else if (m === 'img') {
+      const u = (S()['background-image'] || '').match(/url\(["']?(.*?)["']?\)/); const inp = el('input', { type: 'text', placeholder: 'https://… atau data:…', value: u ? u[1] : '' });
+      inp.addEventListener('input', () => { const v = inp.value.trim(); setP('background-image', v ? `url("${v.replace(/"/g, '%22')}")` : ''); });
+      box.append(el('div', { class: 'f' }, el('label', { text: H('Alamat', 'url()') }), el('div', { class: 'c' }, inp)));
+      const dis = () => /url\(/.test(S()['background-image'] || '') ? '' : 'Isi alamat gambar dulu'; const b0 = FIELDS.length;
+      fld('Ukuran', segCtl('background-size', [['cover', 'Penuh'], ['contain', 'Utuh'], ['auto', 'Asli']]), { always: true, dis }, box); fld('Pengulangan', selCtl('background-repeat', [['no-repeat', 'Tidak diulang'], ['repeat', 'Diulang'], ['repeat-x', 'Diulang mendatar'], ['repeat-y', 'Diulang menurun']]), { always: true, dis }, box); fld('Posisi', txtCtl('background-position', { list: ['center', 'top', 'bottom', 'left', 'right', 'center center', '50% 50%'], ph: 'center' }), { always: true, dis }, box);
+      mine = FIELDS.slice(b0); mine.forEach(f => f.upd());
+    }
+    else if (m === 'custom') {
+      const inp = el('input', { type: 'text', value: S().background }); inp.addEventListener('input', () => setP('background', inp.value.trim()));
+      box.append(el('div', { class: 'small', text: 'Nilai latar kustom dari kode. Ganti dengan pengaturan di sini:' }), el('div', { class: 'f nolab', style: 'grid-template-columns:1fr' }, el('div', { class: 'c' }, inp)), el('button', { text: 'Pakai pengaturan ini (hapus nilai kustom)', onclick: () => { delete S().background; bgForce[cur().k + state] = 'none'; commit('bg'); draw(); } }));
+    }
+  };
+  return { el: box, upd() { if (!box.contains(document.activeElement) || !box.children.length) draw(); } };
+}
+
+/* -- composite: transform / filter / transition -- */
+const TDEF = () => ({ tx: 0, ty: 0, rot: 0, sx: 1, sy: 1, kx: 0, ky: 0, custom: false });
+function parseT(v) {
+  const m = TDEF(); if (!v || v === 'none') return m; const re = /([a-zA-Z]+)\(([^)]*)\)/g; let x, any = false, rest = v.replace(re, '');
+  if (rest.trim()) m.custom = true;
+  while ((x = re.exec(v))) { any = true; const a = x[2].split(',').map(s => s.trim()), px = s => /%|em|vw|vh/.test(s || '') ? (m.custom = true, 0) : parseFloat(s) || 0, dg = s => /turn/.test(s) ? parseFloat(s) * 360 : /rad/.test(s) ? parseFloat(s) * 180 / Math.PI : parseFloat(s) || 0;
+    switch (x[1]) { case 'translate': m.tx = px(a[0]); m.ty = a[1] != null ? px(a[1]) : 0; break; case 'translateX': m.tx = px(a[0]); break; case 'translateY': m.ty = px(a[0]); break; case 'rotate': m.rot = dg(a[0]); break; case 'scale': m.sx = parseFloat(a[0]); m.sy = a[1] != null ? parseFloat(a[1]) : m.sx; break; case 'scaleX': m.sx = parseFloat(a[0]); break; case 'scaleY': m.sy = parseFloat(a[0]); break; case 'skew': m.kx = dg(a[0]); m.ky = a[1] != null ? dg(a[1]) : 0; break; case 'skewX': m.kx = dg(a[0]); break; case 'skewY': m.ky = dg(a[0]); break; default: m.custom = true; } }
+  return m;
+}
+function serT(m) { const p = []; if (m.tx || m.ty) p.push(`translate(${m.tx}px, ${m.ty}px)`); if (m.rot) p.push(`rotate(${m.rot}deg)`); if (m.sx !== 1 || m.sy !== 1) p.push(`scale(${m.sx}, ${m.sy})`); if (m.kx || m.ky) p.push(`skew(${m.kx}deg, ${m.ky}deg)`); return p.join(' '); }
+const FDEF = { blur: 0, brightness: 100, contrast: 100, grayscale: 0, saturate: 100, 'hue-rotate': 0, invert: 0, sepia: 0 };
+function parseF(v, keys) { const m = { custom: false }; keys.forEach(k => m[k] = FDEF[k]); if (!v || v === 'none') return m; const re = /([a-z-]+)\(([^)]*)\)/g; let x; if (v.replace(re, '').trim()) m.custom = true; while ((x = re.exec(v))) { const k = x[1]; if (!keys.includes(k)) { m.custom = true; continue; } let n = parseFloat(x[2]); if (k !== 'blur' && k !== 'hue-rotate' && !/%/.test(x[2])) n *= 100; m[k] = isNaN(n) ? FDEF[k] : n; } return m; }
+const serF = (m, keys) => keys.filter(k => m[k] !== FDEF[k]).map(k => k === 'blur' ? `blur(${m[k]}px)` : k === 'hue-rotate' ? `hue-rotate(${m[k]}deg)` : `${k}(${rnd(m[k], 1)}%)`).join(' ');
+function customNote(prop, M) { const b = el('div', { class: 'small', style: 'grid-column:1/-1' }); const upd = () => { const c = M().custom; b.innerHTML = ''; if (c) b.append(`Nilai kustom dari kode (${getP(prop)}). Menggeser pengaturan di atas akan menimpanya. `, el('button', { text: 'Hapus', onclick: () => setP(prop, '') })); }; FIELDS.push({ upd }); curSec.append(b); }
+function transitionCtl() {
+  const S = () => getP('transition') || '', parse = () => { const v = S(); if (!v) return { p: 'all', d: 0, e: 'ease', dl: 0, custom: false }; if (v.includes(',')) return { custom: true, p: 'all', d: 0, e: 'ease', dl: 0 }; const t = splitTop(v, ' '); const m = { p: t[0] || 'all', d: 0, e: 'ease', dl: 0, custom: false }; const ts = t.filter(x => /^[\d.]+m?s$/.test(x)); const sec = x => /ms$/.test(x) ? parseFloat(x) / 1000 : parseFloat(x); if (ts[0]) m.d = sec(ts[0]); if (ts[1]) m.dl = sec(ts[1]); m.e = t.find((x, i) => i > 0 && !/^[\d.]+m?s$/.test(x)) || 'ease'; return m; };
+  const wr = m => setP('transition', m.d > 0 ? `${m.p} ${m.d}s ${m.e}${m.dl ? ' ' + m.dl + 's' : ''}` : '');
+  const ps = el('select', {}, ...[['all', 'Semuanya'], ['color', 'Warna teks'], ['background-color', 'Warna latar'], ['opacity', 'Kepekatan'], ['transform', 'Bentuk (geser/putar/skala)'], ['box-shadow', 'Bayangan'], ['width', 'Lebar'], ['height', 'Tinggi'], ['filter', 'Efek']].map(([v, t]) => el('option', { value: v, text: t }))), es = el('select', {}, ...[['ease', 'Halus'], ['linear', 'Rata'], ['ease-in', 'Pelan lalu cepat'], ['ease-out', 'Cepat lalu pelan'], ['ease-in-out', 'Pelan-cepat-pelan']].map(([v, t]) => el('option', { value: v, text: t })));
+  ps.addEventListener('change', () => { const m = parse(); m.p = ps.value; wr(m); }); es.addEventListener('change', () => { const m = parse(); m.e = es.value; wr(m); });
+  fld('Yang berubah halus', { el: ps, upd() { ps.value = parse().p; const v = parse().p; if (![...ps.options].some(o => o.value === v)) ps.append(el('option', { value: v, text: v })); ps.value = v; } });
+  mrow('Lama (detik)', parse, wr, 'd', 0, 3, 0.05); fld('Gaya gerak', { el: es, upd() { es.value = parse().e; } }); mrow('Tunda (detik)', parse, wr, 'dl', 0, 3, 0.05);
+  customNote('transition', parse);
+}
+const FONTS = ['system-ui, sans-serif', 'Arial, sans-serif', 'Verdana, sans-serif', 'Trebuchet MS, sans-serif', 'Georgia, serif', "'Times New Roman', serif", 'ui-monospace, Menlo, Consolas, monospace', "'Courier New', monospace", 'cursive', 'fantasy'];
+const ANIM = [['', 'Tanpa animasi'], ['we-muncul', 'Muncul perlahan'], ['we-denyut', 'Berdenyut'], ['we-goyang', 'Bergoyang'], ['we-putar', 'Berputar'], ['we-pantul', 'Memantul'], ['we-melayang', 'Melayang']];
+function parseAnim(v) { const m = { n: '', d: 1, it: 'infinite' }; if (!v) return m; const tk = splitTop(v, ' '); const nm = tk.find(t => /^we-/.test(t)); if (!nm) { m.custom = true; return m; } m.n = nm; const dur = tk.find(t => /^[\d.]+m?s$/.test(t)); if (dur) m.d = /ms$/.test(dur) ? parseFloat(dur) / 1000 : parseFloat(dur); const it = tk.find(t => t === 'infinite' || /^\d+$/.test(t)); if (it) m.it = it; return m; }
+const TAGLIST = [...ALLOW];
+
+function buildInsp() {
+  const root = $('#insp'); root.innerHTML = ''; FIELDS = []; const n = cur();
+  const hasRules = bp => { let r = false; walk(P.root, x => { const m = x.mq && x.mq[bp]; if (m && STATES.some(s => Object.keys(m[s] || {}).length)) r = true; }); return r; };
+  const pickBp = bp => { MQ = bp; setWidth(bp); buildInsp(); };
+  root.append(BPROW = el('div', { class: 'tabs bp' }, el('span', { class: 'small', text: 'Ukuran layar yang sedang diatur' }), el('button', { class: MQ === null ? 'on' : '', title: 'Gaya dasar: dipakai di semua ukuran layar, kecuali ditimpa oleh ukuran yang lebih kecil', onclick: () => pickBp(null) }, el('b', { text: 'Desktop' }), el('small', { text: 'semua ukuran' })), ...[...P.bps].sort((x, y) => y - x).map(bp => el('button', { class: (MQ === bp ? 'on' : '') + (hasRules(bp) ? ' has' : ''), title: `Gaya khusus saat lebar layar ≤ ${bp}px (@media max-width: ${bp}px)`, onclick: () => pickBp(bp) }, el('b', { text: '≤ ' + bp + ' px' }), el('small', { text: devLabel(bp) }))), el('button', { title: 'Tambah ukuran layar baru', onclick: () => { const inp = el('input', { type: 'number', min: 200, max: 3000, value: 600, style: 'width:110px' }); openModal(el('h3', { text: 'Tambah ukuran layar' }), el('p', { text: 'Lebar maksimum (px). Gaya yang kamu atur di ukuran ini hanya berlaku saat lebar layar sama atau lebih kecil.' }), inp, el('div', { class: 'btns' }, el('button', { text: 'Batal', onclick: closeModal }), el('button', { class: 'pri', text: 'Tambah', onclick: () => { const v = Math.round(+inp.value); if (v >= 200 && v <= 3000 && !P.bps.includes(v)) { P.bps.push(v); P.bps.sort((x, y) => y - x); closeModal(); commit('bp', { build: true }); pickBp(v); } else toast('Isi angka 200-3000 yang belum ada'); } }))); inp.focus(); } }, el('b', { text: '+' }), el('small', { text: 'ukuran lain' }))));
+  requestAnimationFrame(() => root.style.setProperty('--bph', (BPROW ? BPROW.offsetHeight : 0) + 'px'));
+  root.append(el('div', { class: 'tabs' }, ...STATES.map(s => el('button', { class: state === s ? 'on' : '', text: TECH ? ({ base: 'Normal', hover: ':hover', active: ':active', focus: ':focus' })[s] : STATE_LBL[s], title: STATE_TIP[s], onclick: () => { state = s; buildInsp(); } }))));
+  root.append(el('div', { class: 'nt' }, (MQ ? `Layar ≤ ${MQ}px (${devLabel(MQ)}): ` : 'Desktop / semua ukuran: ') + (state === 'base' ? (n === P.root ? H('Mengatur: halaman', 'Mengatur: body') : `Mengatur: ${TECH ? '#' + n.id + ' <' + n.tag + '>' : n.id + ' (' + kind(n.tag) + ')'}`) : `Tampilan saat ${STATE_TIP[state].toLowerCase()}. Baris kosong = ikut tampilan Normal.`) + (MQ ? ' Baris kosong = ikut ukuran layar yang lebih besar.' : ''), MQ && !hasRules(MQ) ? el('button', { style: 'margin-left:6px;padding:0 6px', text: 'Hapus ukuran ini', onclick: () => { P.bps = P.bps.filter(x => x !== MQ); MQ = null; setWidth(null); commit('bp', { build: true }); } }) : null));
+  const S = (id, title, fn) => { const d = el('details', { ...(L.sec[id] !== false ? { open: true } : {}) }, el('summary', { text: TECH ? (TD[title] || title) : title })); d.addEventListener('toggle', () => { L.sec[id] = d.open; saveL(); }); curSec = el('div', { class: 'sec' }); d.append(curSec); root.append(d); fn(); };
+  const wide = () => { curSec.lastChild.style.gridTemplateColumns = '1fr'; curSec.lastChild.firstChild.style.display = 'none'; };
+  const attr = (label, name, tags, o = {}) => { const i = el('input', { type: 'text', placeholder: o.ph || '' }); i.addEventListener('input', () => { const v = i.value; if (v) cur().attrs[name] = v; else delete cur().attrs[name]; commit('attr-' + name, { dom: true }); }); fld(label, { el: i, upd() { if (document.activeElement !== i) i.value = cur().attrs[name] || ''; } }, { base: true, title: o.tip, dis: () => tags && !tags.includes(cur().tag) ? 'Hanya untuk: ' + tags.map(kind).join(', ') : '' }); };
+  const setLegend = text => { const c = cur(); c.legend = text; if (text) { if (c.tag !== 'fieldset') c.tag = 'fieldset'; const m = lgMap(); if (!Object.keys(m).length) Object.assign(m, { 'margin-left': '12px', 'padding-left': '6px', 'padding-right': '6px' }); } else { if (c.tag === 'fieldset') c.tag = 'div'; c.lg = {}; } commit('legend', { dom: true, tree: true }); };
+  if (n.tag === '#t') {
+    S('el', 'Teks mentah', () => { const ta = el('textarea', { rows: 4, style: 'resize:vertical' }); ta.addEventListener('input', () => { cur().text = ta.value; commit('text', { dom: true, tree: true }); }); fld('Isi teks', { el: ta, upd() { if (document.activeElement !== ta) ta.value = cur().text; } }, { keepNone: true }); curSec.append(el('div', { class: 'small', text: 'Potongan teks yang berada di antara elemen lain (biasanya dari file yang diimpor). Tampilannya diatur lewat elemen induknya.' })); });
+    refreshInsp(); return;
+  }
+  S('el', 'Dasar', () => {
+    const ts = el('select', {}, ...TAGLIST.filter(t => t !== 'fieldset').map(t => el('option', { value: t, text: kind(t) + (/^(div|p)$/.test(t) ? '' : '') })));
+    ts.addEventListener('change', () => { const c = cur(); if (VOID.has(ts.value) && (c.ch.length || c.text)) { toast('Kosongkan isi dulu sebelum jadi ' + kind(ts.value)); ts.value = c.tag; return; } c.tag = ts.value; commit('tag', { dom: true, tree: true, build: true }); });
+    fld('Jenis', { el: ts, upd() { const t = cur().tag; if (![...ts.options].some(o => o.value === t)) ts.append(el('option', { value: t, text: kind(t) })); ts.value = t; } }, { base: true, noRoot: true, keepNone: true, title: 'Blok = kotak kosong, Teks = tulisan, dst. Di kode jenis ini tampil sebagai tag.', dis: () => cur().legend ? 'Hapus "Judul di garis tepi" dulu untuk mengganti jenis' : '' });
+    const ii = el('input', { type: 'text' }); ii.addEventListener('change', () => { const c = cur(), old = c.id; c.id = uniqueId(ii.value, c); vgRename(old, c.id); commit('id', { dom: true, tree: true }); });
+    fld('Nama', { el: ii, upd() { if (document.activeElement !== ii) ii.value = cur() === P.root ? 'halaman' : cur().id; } }, { base: true, noRoot: true, keepNone: true, title: 'Nama unik elemen ini. Dipakai juga di kode.' });
+    const ta = el('textarea', { rows: 2, style: 'resize:vertical' }); ta.addEventListener('input', () => { cur().text = ta.value; commit('text', { dom: true }); });
+    fld('Isi teks', { el: ta, upd() { if (document.activeElement !== ta) ta.value = cur().text; } }, { base: true, keepNone: true, dis: () => VOID.has(cur().tag) ? 'Elemen ini tidak punya isi teks' : '' });
+    attr('Tujuan tautan', 'href', ['a'], { ph: 'https://…', tip: 'Alamat yang dibuka saat tautan diklik' }); attr('Alamat gambar', 'src', ['img'], { ph: 'https://… atau data:…' }); attr('Teks pengganti', 'alt', ['img'], { tip: 'Dibaca pembaca layar dan tampil jika gambar gagal dimuat' });
+    attr('Teks petunjuk', 'placeholder', ['input', 'textarea'], { tip: 'Tulisan pudar di dalam isian sebelum diketik' }); attr('Jenis isian', 'type', ['input', 'button'], { ph: 'text, password, number, email…' }); attr('Keterangan kursor', 'title', null, { tip: 'Tulisan kecil yang muncul saat kursor diam di atas elemen' });
+  });
+  S('lay', 'Susunan', () => {
+    fld('Cara tampil', selCtl('display', [['block', 'Blok penuh (satu baris sendiri)'], ['inline-block', 'Berdampingan (bisa diberi ukuran)'], ['inline', 'Menyatu dengan teks'], ['flex', 'Susun otomatis (baris/kolom)'], ['inline-flex', 'Susun otomatis, berdampingan'], ['grid', 'Petak (kolom dan baris)'], ['inline-grid', 'Petak, berdampingan'], ['none', 'Sembunyikan (hilang)'], ['contents', 'Lepas pembungkus']]), { keepNone: true, title: 'Bagaimana elemen ini menempati ruang' });
+    fld('Terlihat', segCtl('visibility', [['visible', 'Tampak'], ['hidden', 'Tak tampak']]), { title: 'Tak tampak = transparan tapi tempatnya tetap ada' });
+    sub('Menyusun isi di dalamnya');
+    fld('Arah susun', segCtl('flex-direction', [['row', '→ kanan'], ['row-reverse', '← kiri'], ['column', '↓ bawah'], ['column-reverse', '↑ atas']]), { dis: R.flexC });
+    fld('Turun baris', segCtl('flex-wrap', [['nowrap', 'Tidak'], ['wrap', 'Ya'], ['wrap-reverse', 'Ya, terbalik']]), { dis: R.flexC, title: 'Jika isi tidak muat, lanjut ke baris berikutnya' });
+    fld('Sebaran isi', selCtl('justify-content', [['flex-start', 'Rapat di awal'], ['center', 'Di tengah'], ['flex-end', 'Rapat di akhir'], ['space-between', 'Merenggang, tepi menempel'], ['space-around', 'Jarak rata, tepi setengah'], ['space-evenly', 'Jarak sama rata']]), { dis: R.fgC, title: 'Sebaran isi sepanjang arah susun' });
+    fld('Rata melintang', selCtl('align-items', [['flex-start', 'Di awal'], ['center', 'Di tengah'], ['flex-end', 'Di akhir'], ['stretch', 'Diregangkan penuh'], ['baseline', 'Sejajar dasar teks']]), { dis: R.fgC, title: 'Posisi isi pada sisi tegak lurus arah susun' });
+    fld('Sebaran baris', selCtl('align-content', [['flex-start', 'Rapat di awal'], ['center', 'Di tengah'], ['flex-end', 'Rapat di akhir'], ['space-between', 'Merenggang'], ['space-around', 'Jarak rata'], ['stretch', 'Diregangkan']]), { dis: () => R.fgC() || (isFlex(E('display')) && E('flex-wrap') === 'nowrap' ? 'Butuh "Turun baris: Ya"' : ''), title: 'Sebaran antar baris jika isi turun baris' });
+    fld('Jarak antar isi', lenCtl('gap'), { dis: R.fgC }); fld('…antar baris saja', lenCtl('row-gap'), { dis: R.fgC }); fld('…antar kolom saja', lenCtl('column-gap'), { dis: R.fgC });
+    sub('Petak (kolom dan baris)');
+    fld('Pembagian kolom', txtCtl('grid-template-columns', { ph: '1fr 1fr 1fr' }), { dis: R.gridC, title: 'Contoh: 1fr 1fr 1fr = tiga kolom sama lebar; 200px 1fr = kolom pertama 200px' }); fld('Pembagian baris', txtCtl('grid-template-rows', { ph: 'auto auto' }), { dis: R.gridC });
+    fld('Tinggi baris baru', txtCtl('grid-auto-rows', { ph: 'auto' }), { dis: R.gridC }); fld('Lebar kolom baru', txtCtl('grid-auto-columns', { ph: 'auto' }), { dis: R.gridC });
+    fld('Arah pengisian', selCtl('grid-auto-flow', [['row', 'Baris demi baris'], ['column', 'Kolom demi kolom'], ['dense', 'Rapat (isi celah)']]), { dis: R.gridC }); fld('Rata isi di petak', selCtl('justify-items', [['start', 'Awal'], ['center', 'Tengah'], ['end', 'Akhir'], ['stretch', 'Diregangkan']]), { dis: R.gridC });
+    sub('Aturan elemen ini di dalam induknya');
+    fld('Ikut melebar', lenCtl('flex-grow', { unitless: true }), { dis: R.flexI, noRoot: true, title: '0 = tidak, 1 = ikut mengisi sisa ruang (angka lebih besar = bagian lebih banyak)' }); fld('Boleh menyusut', lenCtl('flex-shrink', { unitless: true }), { dis: R.flexI, noRoot: true, title: '0 = jangan dikecilkan saat ruang sempit' }); fld('Ukuran awal', lenCtl('flex-basis'), { dis: R.flexI, noRoot: true });
+    fld('Urutan tampil', lenCtl('order', { unitless: true }), { dis: R.fgI, noRoot: true, title: 'Angka kecil tampil lebih dulu' });
+    fld('Rata sendiri', selCtl('align-self', [['flex-start', 'Di awal'], ['center', 'Di tengah'], ['flex-end', 'Di akhir'], ['stretch', 'Diregangkan'], ['baseline', 'Sejajar dasar teks']]), { dis: R.fgI, noRoot: true });
+    fld('Rata mendatar', selCtl('justify-self', [['start', 'Awal'], ['center', 'Tengah'], ['end', 'Akhir'], ['stretch', 'Diregangkan']]), { dis: R.gridI, noRoot: true });
+    fld('Mengisi kolom', txtCtl('grid-column', { ph: '1 / 3' }), { dis: R.gridI, noRoot: true, title: '1 / 3 = dari garis kolom 1 sampai 3; span 2 = selebar 2 kolom' }); fld('Mengisi baris', txtCtl('grid-row', { ph: '1 / 2' }), { dis: R.gridI, noRoot: true });
+  });
+  S('pos', 'Penempatan', () => {
+    fld('Cara menempatkan', selCtl('position', [['static', 'Mengikuti alur (biasa)'], ['relative', 'Geser dari tempat asal'], ['absolute', 'Bebas di dalam induknya'], ['fixed', 'Tetap di layar'], ['sticky', 'Menempel saat digulir']]), { noRoot: true, title: 'Pilih selain "Mengikuti alur" agar bisa diatur jaraknya dan diseret di kanvas' });
+    ['top', 'right', 'bottom', 'left'].forEach((s, i) => fld(['Jarak dari atas', 'Jarak dari kanan', 'Jarak dari bawah', 'Jarak dari kiri'][i], lenCtl(s, { ph: 'otomatis' }), { dis: R.pos, noRoot: true }));
+    fld('Lapisan', lenCtl('z-index', { unitless: true, ph: 'otomatis' }), { dis: R.z, noRoot: true, title: 'Angka lebih besar = tampil di depan elemen lain' });
+    curSec.append(el('div', { class: 'small', text: 'Tip: elemen yang penempatannya bukan "Mengikuti alur" bisa diseret langsung di kanvas.' }));
+  });
+  S('size', 'Ukuran', () => {
+    ['width', 'height', 'min-width', 'min-height', 'max-width', 'max-height'].forEach((p, i) => fld(['Lebar', 'Tinggi', 'Lebar terkecil', 'Tinggi terkecil', 'Lebar terbesar', 'Tinggi terbesar'][i], lenCtl(p, { ph: i < 2 ? 'otomatis' : '' }), { dis: R.inl, title: i === 0 ? 'Bisa px, %, atau rumus seperti calc(100% - 20px)' : '' }));
+    fld('Perbandingan', txtCtl('aspect-ratio', { ph: '16 / 9', check: true }), { dis: R.inl, title: 'Lebar : tinggi, mis. 16 / 9 atau 1 (persegi)' });
+    fld('Hitung ukuran', selCtl('box-sizing', [['border-box', 'Termasuk garis tepi dan ruang dalam'], ['content-box', 'Isi saja']]), {});
+    fld('Isi melebihi lebar', selCtl('overflow-x', [['visible', 'Tampak keluar'], ['hidden', 'Dipotong'], ['scroll', 'Selalu ada penggulir'], ['auto', 'Penggulir jika perlu']]), {}); fld('Isi melebihi tinggi', selCtl('overflow-y', [['visible', 'Tampak keluar'], ['hidden', 'Dipotong'], ['scroll', 'Selalu ada penggulir'], ['auto', 'Penggulir jika perlu']]), {});
+    fld('Gambar mengisi', selCtl('object-fit', [['cover', 'Penuh (ada yang terpotong)'], ['contain', 'Utuh (ada sisa ruang)'], ['fill', 'Ditarik mengikuti kotak'], ['none', 'Ukuran asli']]), { dis: () => cur().tag === 'img' ? '' : 'Hanya untuk Gambar' }); fld('Titik fokus gambar', txtCtl('object-position', { ph: 'center', list: ['center', 'top', 'bottom', 'left', 'right'] }), { dis: () => cur().tag === 'img' ? '' : 'Hanya untuk Gambar' });
+    fld('Bisa ditarik ukurannya', selCtl('resize', [['none', 'Tidak'], ['both', 'Lebar dan tinggi'], ['horizontal', 'Lebar saja'], ['vertical', 'Tinggi saja']]), { dis: () => E('overflow-x') === 'visible' && E('overflow-y') === 'visible' ? 'Butuh "Isi melebihi" selain "Tampak keluar"' : '' });
+  });
+  S('gap', 'Ruang', () => {
+    fld('Jarak luar', sidesCtl(SIDES.map(s => 'margin-' + s), ['atas', 'kanan', 'bawah', 'kiri'], 'margin'), {}); fld('Ruang dalam', sidesCtl(SIDES.map(s => 'padding-' + s), ['atas', 'kanan', 'bawah', 'kiri'], 'padding'), {});
+    curSec.append(el('div', { class: 'small', text: 'Jarak luar = jarak ke elemen lain (boleh "auto" untuk menengahkan). Ruang dalam = jarak isi ke garis tepi. Tombol = menyamakan semua sisi.' }));
+  });
+  S('bg', 'Latar belakang', () => { fld('', bgCtl(), { nolab: true }); wide(); curSec.querySelector('.f').dataset.kw = 'warna latar background gradasi gradient gambar image solid'; });
+  S('bd', 'Garis tepi dan sudut', () => {
+    fld('Gaya garis', selCtl('border-style', [['none', 'Tanpa'], ['solid', 'Lurus'], ['dashed', 'Putus-putus'], ['dotted', 'Titik-titik'], ['double', 'Ganda'], ['groove', 'Cekung'], ['ridge', 'Cembung'], ['inset', 'Masuk'], ['outset', 'Keluar']]), {});
+    fld('Tebal', lenCtl('border-width'), { dis: R.bdr('border') }); fld('Warna', colCtl('border-color'), { dis: R.bdr('border') });
+    fld('Sudut membulat', sidesCtl(CORNERS.map(s => 'border-' + s + '-radius'), ['↖', '↗', '↘', '↙'], 'radius'), {}); curSec.append(el('div', { class: 'small', text: 'Urutan: kiri-atas, kanan-atas, kanan-bawah, kiri-bawah. Isi 50% untuk lingkaran.' }));
+    sub('Per sisi (opsional, menimpa pengaturan di atas)');
+    fld('Gaya', sidesCtl(SIDES.map(s => 'border-' + s + '-style'), ['atas', 'kanan', 'bawah', 'kiri'], 'bs'), { title: 'Tulis: solid, dashed, dotted, none…' });
+    fld('Tebal', sidesCtl(SIDES.map(s => 'border-' + s + '-width'), ['atas', 'kanan', 'bawah', 'kiri'], 'bw'), { dis: R.bdr('border') }); fld('Warna', sidesCtl(SIDES.map(s => 'border-' + s + '-color'), ['atas', 'kanan', 'bawah', 'kiri'], 'bc'), { dis: R.bdr('border'), title: 'Tulis warna, mis. red atau #ff0000' });
+    sub('Garis luar (di luar tepi, tidak menambah ukuran)');
+    fld('Gaya', selCtl('outline-style', [['none', 'Tanpa'], ['solid', 'Lurus'], ['dashed', 'Putus-putus'], ['dotted', 'Titik-titik'], ['double', 'Ganda']]), {}); fld('Tebal', lenCtl('outline-width'), { dis: R.bdr('outline') }); fld('Warna', colCtl('outline-color'), { dis: R.bdr('outline') }); fld('Jarak dari tepi', lenCtl('outline-offset'), { dis: R.bdr('outline') });
+    sub('Bentuk potongan'); fld('Potong jadi', selCtl('clip-path', [['circle(50%)', 'Lingkaran'], ['ellipse(50% 40% at 50% 50%)', 'Elips'], ['polygon(50% 0%, 0% 100%, 100% 100%)', 'Segitiga'], ['polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)', 'Belah ketupat'], ['polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)', 'Segi enam'], ['inset(0 round 20px)', 'Sudut membulat']], { ph: 'Tanpa' }), { title: 'Memotong bentuk elemen (termasuk bayangan)' });
+  });
+  S('lg', 'Judul di garis tepi', () => {
+    const dis = () => BLOCKS.has(cur().tag) ? '' : 'Hanya untuk Blok', dis2 = () => dis() || (cur().legend ? '' : 'Isi tulisan judul dulu');
+    const ti = el('input', { type: 'text', placeholder: 'mis. Data diri' }); ti.addEventListener('input', () => setLegend(ti.value));
+    fld('Tulisan judul', { el: ti, upd() { if (document.activeElement !== ti) ti.value = cur().legend || ''; } }, { base: true, dis, title: 'Tulisan yang duduk di atas garis tepi blok, seperti judul kotak formulir. Kosongkan untuk menghapus.' });
+    const posOf = () => { const m = lgMap(), l = m['margin-left'], r = m['margin-right']; return (l === 'auto' && r === 'auto') ? 'c' : l === 'auto' ? 'r' : 'l'; };
+    const jarak = () => { const m = lgMap(), v = posOf() === 'r' ? m['margin-right'] : m['margin-left']; return v && v !== 'auto' ? v : '12px'; };
+    const bs = [['l', 'Kiri'], ['c', 'Tengah'], ['r', 'Kanan']].map(([v, t]) => el('button', { text: t, 'data-v': v, onclick: () => { const j = jarak(), m = lgMap(); delete m['margin-left']; delete m['margin-right']; if (v === 'l') m['margin-left'] = j; else if (v === 'c') { m['margin-left'] = 'auto'; m['margin-right'] = 'auto'; } else { m['margin-left'] = 'auto'; m['margin-right'] = j; } commit('lgpos'); } }));
+    fld('Posisi judul', { el: el('div', { class: 'seg' }, ...bs), upd() { const p = posOf(); bs.forEach(b => b.classList.toggle('on', b.dataset.v === p)); } }, { base: true, dis: dis2 });
+    const ji = el('input', { type: 'text', placeholder: '12px' }); ji.addEventListener('input', () => { let v = ji.value.trim(); if (/^-?[\d.]+$/.test(v)) v += 'px'; if (!v || !CSS.supports('margin-left', v)) return; const m = lgMap(); m[posOf() === 'r' ? 'margin-right' : 'margin-left'] = v; commit('lgj'); });
+    fld('Jarak dari sisi', { el: ji, upd() { if (document.activeElement !== ji) ji.value = jarak(); } }, { base: true, dis: () => dis2() || (posOf() === 'c' ? 'Judul di tengah, tidak ada jarak sisi' : '') });
+    fld('Ruang kiri tulisan', lenCtl('padding-left', { lg: true }), { base: true, dis: dis2 }); fld('Ruang kanan tulisan', lenCtl('padding-right', { lg: true }), { base: true, dis: dis2 });
+    fld('Ukuran huruf', lenCtl('font-size', { lg: true }), { base: true, dis: dis2 }); fld('Warna', colCtl('color', { lg: true }), { base: true, dis: dis2 });
+    fld('Ketebalan', selCtl('font-weight', [['400', 'Normal'], ['500', 'Sedang'], ['700', 'Tebal'], ['900', 'Sangat tebal']], { lg: true }), { base: true, dis: dis2 });
+  });
+  S('sh', 'Bayangan', () => { sub('Bayangan kotak'); fld('', shadowCtl('box-shadow', { spread: true, inset: true }), { nolab: true }); wide(); sub('Bayangan teks'); fld('', shadowCtl('text-shadow', {}), { nolab: true, dis: R.txt }); wide(); });
+  S('tx', 'Teks', () => {
+    const d = R.noTxt;
+    fld('Jenis huruf', txtCtl('font-family', { list: FONTS }), { dis: d, title: 'Pilih dari daftar atau ketik nama huruf' }); fld('Ukuran huruf', lenCtl('font-size'), { dis: d });
+    fld('Ketebalan', selCtl('font-weight', [['100', 'Sangat tipis'], ['300', 'Tipis'], ['400', 'Normal'], ['500', 'Sedang'], ['600', 'Agak tebal'], ['700', 'Tebal'], ['800', 'Sangat tebal'], ['900', 'Paling tebal']]), { dis: d }); fld('Miring', segCtl('font-style', [['normal', 'Tegak'], ['italic', 'Miring']]), { dis: d });
+    fld('Warna teks', colCtl('color'), { dis: d }); fld('Jarak antar baris', lenCtl('line-height', { unitless: true, step: .1 }), { dis: d, title: '1.5 = satu setengah kali tinggi huruf' }); fld('Jarak antar huruf', lenCtl('letter-spacing'), { dis: d });
+    fld('Rata', segCtl('text-align', [['left', 'Kiri'], ['center', 'Tengah'], ['right', 'Kanan'], ['justify', 'Penuh']]), { dis: d });
+    fld('Garis pada teks', selCtl('text-decoration', [['none', 'Tanpa'], ['underline', 'Garis bawah'], ['line-through', 'Coret'], ['overline', 'Garis atas']]), { dis: d }); fld('Bentuk huruf', selCtl('text-transform', [['none', 'Asli'], ['uppercase', 'HURUF BESAR'], ['lowercase', 'huruf kecil'], ['capitalize', 'Awal Kata Besar']]), { dis: d });
+    fld('Turun baris', selCtl('white-space', [['normal', 'Otomatis turun baris'], ['nowrap', 'Satu baris saja'], ['pre', 'Persis seperti diketik'], ['pre-wrap', 'Persis + otomatis turun']]), { dis: d });
+    fld('Kata panjang', selCtl('word-break', [['normal', 'Biasa'], ['break-all', 'Boleh putus di mana saja'], ['keep-all', 'Jangan dipecah']]), { dis: d });
+    fld('Teks terpotong', selCtl('text-overflow', [['clip', 'Dipotong'], ['ellipsis', 'Titik-titik (…)']]), { dis: () => d() || ((E('overflow-x') === 'hidden' && E('white-space') === 'nowrap') ? '' : 'Butuh "Isi melebihi lebar: Dipotong" dan "Turun baris: Satu baris saja"') });
+    fld('Menjorok baris pertama', lenCtl('text-indent'), { dis: d }); fld('Sejajar vertikal', selCtl('vertical-align', [['baseline', 'Dasar teks'], ['top', 'Atas'], ['middle', 'Tengah'], ['bottom', 'Bawah']]), { dis: () => d() || (/^(inline|table-cell)/.test(E('display')) ? '' : 'Butuh "Cara tampil: Berdampingan" atau "Menyatu dengan teks"') });
+    fld('Penanda daftar', selCtl('list-style-type', [['disc', 'Titik'], ['circle', 'Lingkaran'], ['square', 'Kotak'], ['decimal', 'Angka'], ['lower-alpha', 'Huruf kecil'], ['upper-alpha', 'Huruf besar'], ['none', 'Tanpa']]), { dis: () => /^(ul|ol|li)$/.test(cur().tag) ? '' : 'Hanya untuk Daftar' });
+    fld('Bisa diblok/disalin', segCtl('user-select', [['text', 'Ya'], ['none', 'Tidak']]), {});
+  });
+  S('fx', 'Efek dan gerak', () => {
+    mrow('Kepekatan', () => ({ v: getP('opacity') != null ? +getP('opacity') : 1 }), m => setP('opacity', m.v >= 1 ? '' : String(rnd(m.v, 2)), 'opacity'), 'v', 0, 1, 0.01, { title: '1 = jelas penuh, 0 = tak terlihat' });
+    sub('Ubah bentuk'); const TM = () => parseT(getP('transform')), TW = m => setP('transform', serT(m), 'transform'), td = R.inlT;
+    mrow('Geser mendatar', TM, TW, 'tx', -500, 500, 1, { dis: td }); mrow('Geser tegak', TM, TW, 'ty', -500, 500, 1, { dis: td }); mrow('Putar (°)', TM, TW, 'rot', -360, 360, 1, { dis: td });
+    mrow('Perbesar lebar', TM, TW, 'sx', 0, 3, 0.01, { dis: td }); mrow('Perbesar tinggi', TM, TW, 'sy', 0, 3, 0.01, { dis: td }); mrow('Miring mendatar', TM, TW, 'kx', -80, 80, 1, { dis: td }); mrow('Miring tegak', TM, TW, 'ky', -80, 80, 1, { dis: td });
+    customNote('transform', TM); fld('Titik pusat putar', txtCtl('transform-origin', { ph: 'center', list: ['center', 'top left', 'top right', 'bottom left', 'bottom right', '50% 50%'] }), { dis: td });
+    sub('Efek warna dan kabur'); const FK = Object.keys(FDEF), FM = () => parseF(getP('filter'), FK), FW = m => setP('filter', serF(m, FK), 'filter');
+    [['Kabur (px)', 'blur', 0, 30, 0.5], ['Kecerahan %', 'brightness', 0, 300, 1], ['Kontras %', 'contrast', 0, 300, 1], ['Hitam-putih %', 'grayscale', 0, 100, 1], ['Kepekatan warna %', 'saturate', 0, 300, 1], ['Putar warna (°)', 'hue-rotate', 0, 360, 1], ['Negatif %', 'invert', 0, 100, 1], ['Cokelat tua %', 'sepia', 0, 100, 1]].forEach(([l, k, a, b, s]) => mrow(l, FM, FW, k, a, b, s));
+    customNote('filter', FM);
+    sub('Efek kaca (memburamkan yang di belakang)'); const BK = ['blur', 'brightness', 'saturate'], BM = () => parseF(getP('backdrop-filter'), BK), BW = m => setP('backdrop-filter', serF(m, BK), 'backdrop');
+    mrow('Kabur (px)', BM, BW, 'blur', 0, 40, 0.5); mrow('Kecerahan %', BM, BW, 'brightness', 0, 300, 1); mrow('Kepekatan warna %', BM, BW, 'saturate', 0, 300, 1);
+    sub('Lainnya'); fld('Campur warna', selCtl('mix-blend-mode', [['multiply', 'Gelapkan (kali)'], ['screen', 'Terangkan'], ['overlay', 'Overlay'], ['darken', 'Ambil yang lebih gelap'], ['lighten', 'Ambil yang lebih terang'], ['difference', 'Selisih']]), { title: 'Cara warna elemen bercampur dengan yang di belakangnya' });
+    fld('Bentuk kursor', selCtl('cursor', [['pointer', 'Tangan'], ['default', 'Panah'], ['text', 'Teks'], ['move', 'Geser'], ['grab', 'Menggenggam'], ['not-allowed', 'Dilarang'], ['crosshair', 'Bidik'], ['wait', 'Menunggu']]), {}); fld('Bisa diklik', segCtl('pointer-events', [['auto', 'Ya'], ['none', 'Tembus klik']]), {});
+    sub('Perubahan halus saat kondisi berubah'); curSec.append(el('div', { class: 'small', text: 'Contoh: atur tampilan "Disorot", lalu isi Lama di bawah agar perubahan terjadi perlahan.' })); transitionCtl();
+    sub('Animasi berulang'); const AM = () => parseAnim(getP('animation')), AW = m => setP('animation', m.n ? `${m.n} ${m.d}s ease-in-out ${m.it}` : '', 'animation');
+    const as = el('select', {}, ...ANIM.map(([v, t]) => el('option', { value: v, text: t }))); as.addEventListener('change', () => { const m = AM(); m.n = as.value; AW(m); });
+    fld('Animasi', { el: as, upd() { as.value = AM().n; } }, {}); const nodis = () => AM().n ? '' : 'Pilih animasi dulu';
+    mrow('Lama satu putaran (detik)', AM, AW, 'd', 0.1, 5, 0.1, { dis: nodis });
+    const its = el('select', {}, ...[['1', '1 kali'], ['2', '2 kali'], ['3', '3 kali'], ['infinite', 'Selamanya']].map(([v, t]) => el('option', { value: v, text: t }))); its.addEventListener('change', () => { const m = AM(); m.it = its.value; AW(m); });
+    fld('Diulang', { el: its, upd() { its.value = AM().it; } }, { dis: nodis });
+  });
+  techOpts(root); refreshInsp();
+}
+function techOpts(root) { if (!TECH) return; $$('option', root).forEach(o => { const v = o.value; if (!v) o.textContent = 'default'; else if (!/^we-|\(/.test(v)) o.textContent = v; }); $$('.seg button[data-v]', root).forEach(b => { if (b.title === b.dataset.v) b.textContent = b.dataset.v; }); }
+function refreshInsp() { FIELDS.forEach(f => f.upd()); }
+
+/* ===== Init ===== */
+load(); if (!byK(SEL)) SEL = P.root.k; ensureIds(); $('#pname').value = P.name;
+applyLayout(); applyLock(); fullRender(); drawVis(); setWidth(L.cw || null, true); pushHist(); updUndo();
+showManager();
+window.__we = { setTech, get P() { return P; }, get state() { return state; }, set state(v) { state = v; buildInsp(); }, get SEL() { return SEL; }, select, commit, genCSS, genHTML, fullDoc, importHTML, importCSS, addEl, PRESETS, undo, redo, L, applyLayout, parseGrad, serGrad, parseShadow, parseT, FIELDS: () => FIELDS, cur, liveEl, byK, delNode, dupNode, E };
+</script>
+</body>
+</html>
